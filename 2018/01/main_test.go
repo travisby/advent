@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -12,6 +14,7 @@ type testCase struct {
 		result *int
 		err    error
 	}
+	method func(r io.Reader) (*int, error)
 }
 
 // prints *result or nil, instead of the address
@@ -24,7 +27,7 @@ func (tc testCase) outputStringer() string {
 }
 
 func (tc testCase) Test(t *testing.T) {
-	result, err := addFrequency(strings.NewReader(strings.Join(tc.input, "\n")))
+	result, err := tc.method(strings.NewReader(strings.Join(tc.input, "\n")))
 
 	// we don't expect both to be nil, nor neither
 	if result == nil && err == nil {
@@ -38,7 +41,12 @@ func (tc testCase) Test(t *testing.T) {
 	} else if tc.output.err != nil && err != nil && tc.output.err.Error() == err.Error() {
 		return
 	}
-	t.Fatalf("expected: %v, actual: (%+v, %+v)", tc.outputStringer(), result, err)
+
+	temp := "<nil>"
+	if result != nil {
+		temp = strconv.Itoa(*result)
+	}
+	t.Fatalf("expected: %v, actual: (%+v, %+v)", tc.outputStringer(), temp, err)
 }
 
 // this way we can write test cases inline, avoiding trying to do `&0` which won't work
@@ -49,6 +57,7 @@ func newTestCase(input []string, outputSuccess int, outputError error) testCase 
 	} else {
 		tc.output.result = &outputSuccess
 	}
+	tc.method = addFrequency
 	return tc
 }
 
@@ -57,6 +66,31 @@ func TestAddFrequency(t *testing.T) {
 		newTestCase([]string{"+1", "-2", "+3", "+1"}, 3, nil),
 		newTestCase([]string{"+1", "+1", "+1"}, 3, nil),
 		newTestCase([]string{"-1", "-2", "-3"}, -6, nil),
+	} {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			tc.Test(t)
+		})
+	}
+}
+
+// this way we can write test cases inline, avoiding trying to do `&0` which won't work
+func newTestCaseP2(input []string, outputSuccess int, outputError error) testCase {
+	tc := testCase{input: input}
+	if outputError != nil {
+		tc.output.err = outputError
+	} else {
+		tc.output.result = &outputSuccess
+	}
+	tc.method = firstDoubleFrequency
+	return tc
+}
+
+func TestFirstDoubleFrequency(t *testing.T) {
+	for i, tc := range []testCase{
+		newTestCaseP2([]string{"+1", "-1"}, 0, nil),
+		newTestCaseP2([]string{"+3", "+3", "+4", "-2", "-4"}, 10, nil),
+		newTestCaseP2([]string{"-6", "+3", "+8", "+5", "-6"}, 5, nil),
+		newTestCaseP2([]string{"+7", "+7", "-2", "-7", "-4"}, 14, nil),
 	} {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			tc.Test(t)
