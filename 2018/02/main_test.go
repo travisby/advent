@@ -68,3 +68,39 @@ func TestChecksumsTwosAndThrees(t *testing.T) {
 	}
 
 }
+
+func TestNumDifferent(t *testing.T) {
+	type testCase struct {
+		input  []string
+		output int
+	}
+
+	for i, tc := range []testCase{
+		testCase{[]string{"abcde", "axcye"}, 2},
+		testCase{[]string{"fghij", "fguij"}, 1},
+	} {
+		t.Run(fmt.Sprintf("Case %d", i), func(t *testing.T) {
+			if result := numDifferent(tc.input[0], tc.input[1]); result != tc.output {
+				t.Fatalf("Expected %d, got %d", tc.output, result)
+			}
+		})
+	}
+}
+
+func TestFindOnlyOneDifferent(t *testing.T) {
+	str1, str2 := findOnlyOneDifferent([]string{"abcde", "axcye", "fghij", "fguij"})
+	if str1 == str2 {
+		t.Fatalf("Expected %q and %q to differ", str1, str2)
+	} else if str1 != "fghij" && str2 != "fghij" {
+		t.Fatalf("expected %q or %q to be \"fghij\"", str1, str2)
+	} else if str1 != "fguij" && str2 != "fguij" {
+		t.Fatalf("expected %q or %q to be \"fguij\"", str1, str2)
+	}
+}
+
+func TestFindCommonCharacters(t *testing.T) {
+	result := findCommonCharacters("fghij", "fguij")
+	if result != "fgij" {
+		t.Fatalf("Expected %q to be \"fgij\"", result)
+	}
+}
