@@ -19,10 +19,12 @@ func MassFromString(s string) (*Module, error) {
 
 func (m Module) Fuel() int {
 	fuel := int(m)/3 - 2
-	if fuel <= 0 {
+
+	if fuel < 0 {
 		return 0
 	}
-	return fuel
+
+	return fuel + Module(fuel).Fuel()
 }
 
 func main() {
