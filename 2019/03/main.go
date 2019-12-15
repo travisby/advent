@@ -2,11 +2,14 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 type point struct {
@@ -14,6 +17,50 @@ type point struct {
 	y int
 }
 type instruction point
+
+var ErrUnknownInstruction = errors.New("Unknown instruction")
+
+func parseInstruction(s string) (*instruction, error) {
+	if len(s) < 2 {
+		return nil, ErrUnknownInstruction
+	}
+
+	i, err := strconv.Atoi(s[1:])
+	if err != nil {
+		return nil, err
+	}
+
+	var inst instruction
+	switch s[0] {
+	case 'U':
+		inst = up(i)
+	case 'D':
+		inst = down(i)
+	case 'L':
+		inst = left(i)
+	case 'R':
+		inst = right(i)
+	default:
+		return nil, ErrUnknownInstruction
+	}
+	return &inst, nil
+}
+
+func parseInstructions(instructions string) ([]instruction, error) {
+	ss := strings.Split(instructions, ",")
+
+	is := make([]instruction, 0, len(ss))
+
+	for _, s := range ss {
+		i, err := parseInstruction(s)
+		if err != nil {
+			return nil, err
+		}
+		is = append(is, *i)
+	}
+
+	return is, nil
+}
 
 func (i instruction) step(p point) []point {
 	points := []point{}
@@ -105,12 +152,42 @@ func main() {
 	}()
 
 	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		_ = scanner.Text()
+	if !scanner.Scan() {
+		log.Fatalf("Expected instructions for wire 1")
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+
+	// parse wire1
+	instructions0, err := parseInstructions(scanner.Text())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !scanner.Scan() {
+		log.Fatalf("Expected instructions for wire 2")
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	// parse wire1
+	instructions1, err := parseInstructions(scanner.Text())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if scanner.Scan() {
+		log.Fatalf("Unexpected additional data")
+	}
+
+	distance, err := getClosestCrossingsDistance(instructions0, instructions1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Closest crossing distance: %d", *distance)
 }
 
 func manhattanSort(ps []point) {
@@ -123,7 +200,7 @@ func manhattanSort(ps []point) {
 }
 
 func manhattanDistance(p point) int {
-	return int(math.Abs(float64(p.x))) + int(math.Abs(float64(p.y)))
+	return int(math.Abs(float64(p.x-0))) + int(math.Abs(float64(p.y-0)))
 }
 
 // accumulate in this case is like python accumulate, or Haskell scan
