@@ -10,7 +10,7 @@ var ErrOverflow = errors.New("The memory has overflowed")
 
 // VM is our VirtualMachine that runs IntCode
 type VM struct {
-	memory []int // the state of memory in the VM
+	Memory []int // the state of memory in the VM
 }
 
 // New creates a new Virtual Machine
@@ -20,17 +20,17 @@ func New(memorySize int) *VM {
 		memorySize = (memorySize/4 + 1) * 4
 	}
 
-	return &VM{memory: make([]int, memorySize)}
+	return &VM{make([]int, memorySize)}
 }
 
 // Load an intcode program into memory
 func (v *VM) Load(offset int, ints []int) error {
-	if len(ints)+offset > len(v.memory) {
+	if len(ints)+offset > len(v.Memory) {
 		return ErrOverflow
 	}
 
 	for i := range ints {
-		v.memory[offset+i] = ints[i]
+		v.Memory[offset+i] = ints[i]
 	}
 
 	return nil
@@ -38,9 +38,9 @@ func (v *VM) Load(offset int, ints []int) error {
 
 // Run the loaded program
 func (v *VM) Run() error {
-	p := program.NewScanner(v.memory)
+	p := program.NewScanner(v.Memory)
 	for p.Scan() {
-		p.Intcode().Apply(v.memory)
+		p.Intcode().Apply(v.Memory)
 
 	}
 	return p.Err()
