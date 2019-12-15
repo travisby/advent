@@ -14,6 +14,7 @@ var ErrUnexpectedHalt = errors.New("Unexpected err: HALT")
 
 // Intcode is an instruction in intcode
 type Intcode interface {
+	// Apply performs the Intcode instruction on the provided piece of memory
 	Apply(memory []int) error
 	String() string
 }
