@@ -5,21 +5,13 @@ import (
 	"testing"
 )
 
-/*
-type scanner struct {
-	error
-	memory []int
-	pc     int
-	token  Intcode
-}
-*/
 func TestProgramHaltsIfErrorBeforeScan(t *testing.T) {
-	s := scanner{error: errors.New(""), pc: 5}
+	s := scanner{error: errors.New(""), instructionPointer: 5}
 	if s.Scan() {
 		t.Error("Scan() should return false if there's an error condition")
 	}
-	if s.pc != 5 {
-		t.Errorf("Expected pc to stay at 5, got: (%d)", s.pc)
+	if s.instructionPointer != 5 {
+		t.Errorf("Expected instruction poitner to stay at 5, got: (%d)", s.instructionPointer)
 	}
 }
 
@@ -29,7 +21,7 @@ func TestNewScanner(t *testing.T) {
 		t.Errorf("NewScanner should not set an error, got: (%+v)", err)
 	}
 
-	if intcode := s.Intcode(); intcode != nil {
+	if intcode := s.Instruction(); intcode != nil {
 		t.Errorf("NewScanner should not set an intcode, got: (%+v)", intcode)
 	}
 
@@ -40,10 +32,6 @@ func TestSimpleHaltProgram(t *testing.T) {
 
 	if s.Scan() {
 		t.Error("Scan() of an error should return false")
-	}
-
-	if s.pc != 4 {
-		t.Errorf("Expected pc to advance to 4, got: (%d)", s.pc)
 	}
 
 	if s.error != HALT {
@@ -61,34 +49,34 @@ func TestSimpleHaltProgram(t *testing.T) {
 
 func TestProgramGeneratesCorrectOpcodes(t *testing.T) {
 	testCases := []struct {
-		title            string
-		memory           []int
-		expectedIntcodes []Intcode
-		expectedError    error
+		title                string
+		memory               []int
+		expectedInstructions []Instruction
+		expectedError        error
 	}{
 		{
 			"Simple use of everything",
 			[]int{1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50},
-			[]Intcode{add{9, 10, 3}, multiply{3, 11, 0}, halt{}},
+			[]Instruction{add{9, 10, 3}, multiply{3, 11, 0}, halt{}},
 			nil,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			actualIntcodes := make([]Intcode, 0, len(tc.expectedIntcodes))
+			actualInstructions := make([]Instruction, 0, len(tc.expectedInstructions))
 
 			p := scanner{memory: tc.memory}
 			for p.Scan() {
-				actualIntcodes = append(actualIntcodes, p.Intcode())
+				actualInstructions = append(actualInstructions, p.Instruction())
 			}
 			// add trailing halt
 			if p.Err() == nil {
-				actualIntcodes = append(actualIntcodes, p.Intcode())
+				actualInstructions = append(actualInstructions, p.Instruction())
 			}
 
-			if !intcodesEqual(tc.expectedIntcodes, actualIntcodes) {
-				t.Errorf("Expected intcodes (%+v), got (%+v)", tc.expectedIntcodes, actualIntcodes)
+			if !intcodesEqual(tc.expectedInstructions, actualInstructions) {
+				t.Errorf("Expected intcodes (%+v), got (%+v)", tc.expectedInstructions, actualInstructions)
 			}
 
 			if p.Err() != nil && tc.expectedError != nil && p.Err().Error() != tc.expectedError.Error() {
@@ -98,7 +86,7 @@ func TestProgramGeneratesCorrectOpcodes(t *testing.T) {
 	}
 }
 
-func intcodesEqual(a []Intcode, b []Intcode) bool {
+func intcodesEqual(a []Instruction, b []Instruction) bool {
 	if len(a) != len(b) {
 		return false
 	}

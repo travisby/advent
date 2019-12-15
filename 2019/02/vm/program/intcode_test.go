@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-func TestIntcodeParse(t *testing.T) {
+func TestInstructionParse(t *testing.T) {
 	testCases := []struct {
-		title           string
-		args            [4]int
-		expectedIntcode Intcode
-		expectedErr     error
+		title               string
+		args                [4]int
+		expectedInstruction Instruction
+		expectedErr         error
 	}{
 		{"Simple add", [4]int{1, 10, 20, 30}, add{10, 20, 30}, nil},
 		{"Simple multiply", [4]int{2, 10, 20, 30}, multiply{10, 20, 30}, nil},
@@ -20,15 +20,15 @@ func TestIntcodeParse(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			intcode, err := newIntcode(tc.args[0], tc.args[1], tc.args[2], tc.args[3])
+			intcode, err := newInstruction([]int{tc.args[0], tc.args[1], tc.args[2], tc.args[3]})
 			if err == nil && err != tc.expectedErr {
 				t.Errorf("Got err (%+v) expected (%+v)", err, tc.expectedErr)
 			} else if err != nil && tc.expectedErr == nil {
 				t.Errorf("Got err (%+v) expected (%+v)", err, tc.expectedErr)
 			} else if err != nil && err.Error() != tc.expectedErr.Error() {
 				t.Errorf("Got err (%+v) expected (%+v)", err, tc.expectedErr)
-			} else if intcode != tc.expectedIntcode {
-				t.Errorf("Got intcode (%s) expected (%s)", intcode, tc.expectedIntcode)
+			} else if intcode != tc.expectedInstruction {
+				t.Errorf("Got intcode (%s) expected (%s)", intcode, tc.expectedInstruction)
 			}
 		})
 	}
@@ -37,7 +37,7 @@ func TestIntcodeParse(t *testing.T) {
 func TestApply(t *testing.T) {
 	testCases := []struct {
 		title               string
-		intcode             Intcode
+		intcode             Instruction
 		memory              []int
 		expectedMemoryAfter []int
 		expectedErr         error

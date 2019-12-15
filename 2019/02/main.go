@@ -51,19 +51,16 @@ func main() {
 	virtualMachine := vm.New(len(memory))
 
 	// PART 1
-	// before running the program, replace position 1 with the value 12 and replace position 2 with the value 2
-	memory[1] = 12
-	memory[2] = 2
-	// END PART 1
-
 	if err := virtualMachine.Load(0, memory); err != nil {
 		log.Fatal(err)
+	} else if err := virtualMachine.SetNoun(12); err != nil {
+	} else if err := virtualMachine.SetVerb(2); err != nil {
 	} else if err := virtualMachine.Run(); err != nil {
 		log.Fatal(err)
 	}
 
-	mem := virtualMachine.Memory[0]
-	log.Printf("Value left at position 0: %d", mem)
+	log.Printf("Output: %d", virtualMachine.Output())
+	// END PART 1
 }
 
 // shamelessly stolen from ScanWords, but with "," instead of " " as the delimiter

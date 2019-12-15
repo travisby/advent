@@ -12,10 +12,12 @@ var HALT = func() error { return errors.New("HALT") }()
 // ErrUnexpectedHalt is when we have an unexpected error that leads to a halt
 var ErrUnexpectedHalt = errors.New("Unexpected err: HALT")
 
-// Intcode is an instruction in intcode
-type Intcode interface {
-	// Apply performs the Intcode instruction on the provided piece of memory
+// Instruction is an instruction in intcode
+type Instruction interface {
+	// Apply performs the Instruction instruction on the provided piece of memory
 	Apply(memory []int) error
+	// NumParametrs returns the number of ints that made up the instruction
+	numParameters() int
 	String() string
 }
 
@@ -40,6 +42,9 @@ func (a add) Apply(memory []int) error {
 
 	return nil
 }
+func (a add) numParameters() int {
+	return 3
+}
 func (a add) String() string {
 	return fmt.Sprintf("Add{$(%d) $(%d)} -> $(%d)", a.arg1pos, a.arg2pos, a.destpos)
 }
@@ -59,6 +64,9 @@ func (m multiply) Apply(memory []int) error {
 
 	return nil
 }
+func (m multiply) numParameters() int {
+	return 3
+}
 func (m multiply) String() string {
 	return fmt.Sprintf("Multiply{$(%d) $(%d)} -> $(%d)", m.arg1pos, m.arg2pos, m.destpos)
 }
@@ -69,20 +77,23 @@ type halt struct {
 func (h halt) Apply(memory []int) error {
 	return HALT
 }
+func (h halt) numParameters() int {
+	return 0
+}
 func (h halt) String() string {
 	return "Halt"
 }
 
-func newIntcode(op, arg1pos, arg2pos, destpos int) (Intcode, error) {
-	switch opcode(op) {
+func newInstruction(memory []int) (Instruction, error) {
+	switch opcode(memory[0]) {
 	case addOp:
-		return add{arg1pos, arg2pos, destpos}, nil
+		return add{memory[1], memory[2], memory[3]}, nil
 	case multiplyOp:
-		return multiply{arg1pos, arg2pos, destpos}, nil
+		return multiply{memory[1], memory[2], memory[3]}, nil
 	case haltOp:
 		// by returning a HALT here we can get things to stop w/o running Apply()
 		return halt{}, HALT
 	}
 
-	return nil, fmt.Errorf("Unknown opcode: %d", op)
+	return nil, fmt.Errorf("Unknown opcode: %d", memory[0])
 }
