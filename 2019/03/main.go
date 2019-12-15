@@ -17,6 +17,57 @@ type point struct {
 	y int
 }
 type instruction point
+type visit struct {
+	point
+	visitsAt int
+}
+type wire struct {
+	visits []visit
+}
+
+func (w *wire) up() {
+	last := w.visits[len(w.visits)-1]
+	next := last
+	next.y++
+	next.visitsAt++
+	w.visits = append(w.visits, next)
+}
+func (w *wire) down() {
+	last := w.visits[len(w.visits)-1]
+	next := last
+	next.y--
+	next.visitsAt++
+	w.visits = append(w.visits, next)
+}
+func (w *wire) left() {
+	last := w.visits[len(w.visits)-1]
+	next := last
+	next.x--
+	next.visitsAt++
+	w.visits = append(w.visits, next)
+}
+func (w *wire) right() {
+	last := w.visits[len(w.visits)-1]
+	next := last
+	next.x++
+	next.visitsAt++
+	w.visits = append(w.visits, next)
+}
+
+func (w *wire) travel(i instruction) {
+	for _ = 0; i.x > 0; i.x-- {
+		w.right()
+	}
+	for _ = 0; i.x < 0; i.x++ {
+		w.left()
+	}
+	for _ = 0; i.y > 0; i.y-- {
+		w.up()
+	}
+	for _ = 0; i.y < 0; i.y++ {
+		w.down()
+	}
+}
 
 var ErrUnknownInstruction = errors.New("Unknown instruction")
 
@@ -62,29 +113,6 @@ func parseInstructions(instructions string) ([]instruction, error) {
 	return is, nil
 }
 
-func (i instruction) step(p point) []point {
-	points := []point{}
-
-	newPoint := point{p.x, p.y}
-	for _ = 0; i.x > 0; i.x-- {
-		newPoint.x++
-		points = append(points, point{newPoint.x, newPoint.y})
-	}
-	for _ = 0; i.x < 0; i.x++ {
-		newPoint.x--
-		points = append(points, point{newPoint.x, newPoint.y})
-	}
-	for _ = 0; i.y > 0; i.y-- {
-		newPoint.y++
-		points = append(points, point{newPoint.x, newPoint.y})
-	}
-	for _ = 0; i.y < 0; i.y++ {
-		newPoint.y--
-		points = append(points, point{newPoint.x, newPoint.y})
-	}
-	return points
-}
-
 func up(y int) instruction {
 	return instruction(point{0, y})
 }
@@ -98,38 +126,49 @@ func right(x int) instruction {
 	return instruction(point{x, 0})
 }
 
-func getCrossings(a []instruction, b []instruction) []point {
-	pos1 := accumulatePoints(a)
-	pos2 := accumulatePoints(b)
+func getCrossings(a []instruction, b []instruction) []visit {
+	wire1Visits := accumulateVisits(a)
+	wire2Visits := accumulateVisits(b)
 
-	// create some maps to search for existence
-	pos1Map := map[point]bool{}
-	for _, p := range pos1 {
-		pos1Map[p] = true
+	// create some maps to search for visits by index
+	wire1Map := make(map[point]int, len(wire1Visits))
+	wire2Map := make(map[point]int, len(wire2Visits))
+
+	for _, v := range wire1Visits {
+		// only save the first visitsAt per wire
+		if _, ok := wire1Map[v.point]; !ok {
+			wire1Map[v.point] = v.visitsAt
+		}
 	}
-	pos2Map := map[point]bool{}
-	for _, p := range pos2 {
-		pos2Map[p] = true
+	for _, v := range wire2Visits {
+		// only save the first visitsAt per wire
+		if _, ok := wire2Map[v.point]; !ok {
+			wire2Map[v.point] = v.visitsAt
+		}
 	}
 
-	crossings := []point{}
-	for k := range pos1Map {
-		if _, ok := pos2Map[k]; ok {
-			crossings = append(crossings, k)
+	crossings := []visit{}
+	for k, v1 := range wire1Map {
+		if v2, ok := wire2Map[k]; ok {
+			crossings = append(crossings, visit{k, v1 + v2})
 		}
 	}
 
 	manhattanSort(crossings)
+
 	return crossings
 }
 
 func getClosestCrossingsDistance(a []instruction, b []instruction) (*int, error) {
 	crossings := getCrossings(a, b)
-	if len(crossings) < 1 {
+	if len(crossings) < 2 {
 		return nil, fmt.Errorf("No crossings")
 	}
 
-	distance := manhattanDistance(crossings[0])
+	// everything technically crosses at 0, so del this
+	crossings = crossings[1:]
+
+	distance := manhattanDistance(crossings[0].point)
 	return &distance, nil
 }
 
@@ -190,11 +229,11 @@ func main() {
 	log.Printf("Closest crossing distance: %d", *distance)
 }
 
-func manhattanSort(ps []point) {
+func manhattanSort(vs []visit) {
 	sort.Slice(
-		ps,
+		vs,
 		func(i, j int) bool {
-			return manhattanDistance(ps[i]) < manhattanDistance(ps[j])
+			return manhattanDistance(vs[i].point) < manhattanDistance(vs[j].point)
 		},
 	)
 }
@@ -207,14 +246,12 @@ func manhattanDistance(p point) int {
 // we want to perform an application like a reduce/fold, but we also want the intermediate results
 // since we not only want to "get" to the end of the instructions, but we want to see each place we went to get there
 // to account for "R8" counting as only one point movement, we'll actually treat that as 8*R(1) for the sake of internal values
-func accumulatePoints(instructions []instruction) []point {
-	accum := []point{}
+func accumulateVisits(instructions []instruction) []visit {
+	wire := wire{[]visit{visit{}}}
 
-	p := point{}
-	for _, inst := range instructions {
-		accum = append(accum, inst.step(p)...)
-		p = accum[len(accum)-1]
+	for _, i := range instructions {
+		wire.travel(i)
 	}
 
-	return accum
+	return wire.visits
 }

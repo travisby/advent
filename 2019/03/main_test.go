@@ -11,23 +11,27 @@ func TestGetCrossings(t *testing.T) {
 		[]instruction{right(8), up(5), left(5), down(3)},
 		[]instruction{up(7), right(6), down(4), left(4)},
 	)
+	crossingPoints := make([]point, 0, len(crossings))
+	for _, v := range crossings {
+		crossingPoints = append(crossingPoints, v.point)
+	}
 
-	if !pointsEquals([]point{point{3, 3}, point{6, 5}}, crossings) {
-		t.Fatalf("Expected crossings to be (%+v), got (%+v)", []point{point{3, 3}, point{6, 5}}, crossings)
+	if !pointsEquals([]point{point{0, 0}, point{3, 3}, point{6, 5}}, crossingPoints) {
+		t.Fatalf("Expected crossings to be (%+v), got (%+v)", []point{point{0, 0}, point{3, 3}, point{6, 5}}, crossingPoints)
 	}
 }
 
 func TestManhattanSort(t *testing.T) {
 	testCases := []struct {
-		points        []point
+		points        []visit
 		expectedOrder []point
 	}{
 		{
-			[]point{point{3, 3}, point{6, 5}},
+			[]visit{{point: point{3, 3}}, {point: point{6, 5}}},
 			[]point{point{3, 3}, point{6, 5}},
 		},
 		{
-			[]point{point{6, 5}, point{3, 3}},
+			[]visit{{point: point{6, 5}}, {point: point{3, 3}}},
 			[]point{point{3, 3}, point{6, 5}},
 		},
 	}
@@ -35,8 +39,13 @@ func TestManhattanSort(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%+v", tc.points), func(t *testing.T) {
 			manhattanSort(tc.points)
-			if !pointsEquals(tc.points, tc.expectedOrder) {
-				t.Fatalf("Expected (%+v), got (%+v)", tc.expectedOrder, tc.points)
+			points := make([]point, 0, len(tc.points))
+			for _, p := range tc.points {
+				points = append(points, p.point)
+			}
+
+			if !pointsEquals(points, tc.expectedOrder) {
+				t.Fatalf("Expected (%+v), got (%+v)", tc.expectedOrder, points)
 			}
 		})
 	}
