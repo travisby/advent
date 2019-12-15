@@ -1,50 +1,87 @@
 package program
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
-// Opcode is the first integer in IntCode
-// saying what action we will take
-type Opcode int
+// HALT is the error returned when we attempt to Apply a halt instruction.  This is only returned when it's a graceful halt, otherwise there is ErrUnexpectedHalt
+// stupid syntax here is to avoid golint "ErrFoo" comment
+var HALT = func() error { return errors.New("HALT") }()
 
-// Add Opcode
-const Add Opcode = 1
+// ErrUnexpectedHalt is when we have an unexpected error that leads to a halt
+var ErrUnexpectedHalt = errors.New("Unexpected err: HALT")
 
-// Multiply Opcode
-const Multiply Opcode = 2
+// Intcode is an instruction in intcode
+type Intcode interface {
+	Apply(memory []int) error
+	String() string
+}
 
-// Halt Opcode
-const Halt Opcode = 99
+type opcode int
 
-// Invalid is for broken / erronous cases
-const Invalid Opcode = -1
+const addOp opcode = 1
+const multiplyOp opcode = 2
+const haltOp opcode = 99
 
-// Intcode is an instruction in the Intcode language
-type Intcode [4]int
+type add struct {
+	arg1pos int
+	arg2pos int
+	destpos int
+}
 
-// type Intcode interface {
-// }
-//
-// type add [4]int
-// type multiply [4]int
-// type halt [4]int
-//
-// func Parse(instruction [4]int) (*Intcode, error) {
-// 	switch Opcode(instruction[0]) {
-// 	case Add:
-// 		return &add(instruction), nil
-// 	case Multiply:
-// 		return &multiply(instruction), nil
-// 	case Halt:
-// 		return &halt(instruction), nil
-// 	}
-// 	return nil, fmt.Errorf("")
-// }
-
-func newIntcode(op, arg1, arg2, dest int) (*Intcode, error) {
-	intcode := Intcode([4]int{op, arg1, arg2, dest})
-	switch Opcode(op) {
-	case Add, Multiply, Halt:
-		return &intcode, nil
+func (a add) Apply(memory []int) error {
+	if a.arg1pos >= len(memory) || a.arg2pos >= len(memory) || a.destpos >= len(memory) {
+		return ErrUnexpectedHalt
 	}
-	return nil, fmt.Errorf("")
+
+	memory[a.destpos] = memory[a.arg1pos] + memory[a.arg2pos]
+
+	return nil
+}
+func (a add) String() string {
+	return fmt.Sprintf("Add{$(%d) $(%d)} -> $(%d)", a.arg1pos, a.arg2pos, a.destpos)
+}
+
+type multiply struct {
+	arg1pos int
+	arg2pos int
+	destpos int
+}
+
+func (m multiply) Apply(memory []int) error {
+	if m.arg1pos >= len(memory) || m.arg2pos >= len(memory) || m.destpos >= len(memory) {
+		return ErrUnexpectedHalt
+	}
+
+	memory[m.destpos] = memory[m.arg1pos] * memory[m.arg2pos]
+
+	return nil
+}
+func (m multiply) String() string {
+	return fmt.Sprintf("Multiply{$(%d) $(%d)} -> $(%d)", m.arg1pos, m.arg2pos, m.destpos)
+}
+
+type halt struct {
+}
+
+func (h halt) Apply(memory []int) error {
+	return HALT
+}
+func (h halt) String() string {
+	return "Halt"
+}
+
+func newIntcode(op, arg1pos, arg2pos, destpos int) (Intcode, error) {
+	switch opcode(op) {
+	case addOp:
+		return add{arg1pos, arg2pos, destpos}, nil
+	case multiplyOp:
+		return multiply{arg1pos, arg2pos, destpos}, nil
+	case haltOp:
+		// by returning a HALT here we can get things to stop w/o running Apply()
+		return halt{}, HALT
+	}
+
+	return nil, fmt.Errorf("Unknown opcode: %d", op)
 }
