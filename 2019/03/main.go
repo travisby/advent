@@ -222,11 +222,35 @@ func main() {
 		log.Fatalf("Unexpected additional data")
 	}
 
+	// PART 1
 	distance, err := getClosestCrossingsDistance(instructions0, instructions1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Closest crossing distance: %d", *distance)
+	// PART 1
+
+	// PART 2
+	crossings := getCrossings(instructions0, instructions1)
+	if len(crossings) < 2 {
+		log.Fatalf("Not enough crossings")
+	}
+	// strip {0, 0}
+	crossings = crossings[1:]
+
+	timeSort(crossings)
+
+	log.Printf("Fewest combined steps to an intersection: %d", crossings[0].visitsAt)
+
+}
+
+func timeSort(vs []visit) {
+	sort.Slice(
+		vs,
+		func(i, j int) bool {
+			return vs[i].visitsAt < vs[j].visitsAt
+		},
+	)
 }
 
 func manhattanSort(vs []visit) {
