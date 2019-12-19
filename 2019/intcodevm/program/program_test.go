@@ -57,7 +57,7 @@ func TestProgramGeneratesCorrectOpcodes(t *testing.T) {
 		{
 			"Simple use of everything",
 			[]int{1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50},
-			[]Instruction{add{9, 10, 3}, multiply{3, 11, 0}, halt{}},
+			[]Instruction{add{position{9}, position{10}, position{3}}, multiply{position{3}, position{11}, position{0}}, halt{}},
 			nil,
 		},
 	}

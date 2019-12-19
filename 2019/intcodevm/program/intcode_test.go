@@ -14,12 +14,19 @@ func TestInstructionParse(t *testing.T) {
 		expectedInstruction Instruction
 		expectedErr         error
 	}{
-		{"Simple add", []int{1, 10, 20, 30}, add{10, 20, 30}, nil},
-		{"Simple multiply", []int{2, 10, 20, 30}, multiply{10, 20, 30}, nil},
-		{"Simple halt", []int{99, -1, 0, 8}, halt{}, HALT},
-		{"Simple error", []int{98, 0, 0, 0}, nil, errors.New("Unknown opcode: 98")},
-		{"Simple input", []int{3, 50}, input{parameter1: 50}, nil},
-		{"Simple output", []int{4, 50}, output{parameter1: 50}, nil},
+		{"halt", []int{99, -1, 0, 8}, halt{}, HALT},
+		{"error", []int{98, 0, 0, 0}, nil, errors.New("Unknown opcode: 98")},
+		{"input", []int{3, 50}, input{parameter1: position{50}}, nil},
+		{"output", []int{4, 50}, output{parameter1: position{50}}, nil},
+
+		{"Position add", []int{1, 10, 20, 30}, add{position{10}, position{20}, position{30}}, nil},
+		{"Position multiply", []int{2, 10, 20, 30}, multiply{position{10}, position{20}, position{30}}, nil},
+
+		{"Immediate add", []int{1101, 10, 20, 30}, add{immediate{10}, immediate{20}, position{30}}, nil},
+		{"Immediate multiply", []int{1102, 10, 20, 30}, multiply{immediate{10}, immediate{20}, position{30}}, nil},
+
+		{"Mixed add", []int{1001, 10, 20, 30}, add{position{10}, immediate{20}, position{30}}, nil},
+		{"Mixed multiply", []int{1002, 10, 20, 30}, multiply{position{10}, immediate{20}, position{30}}, nil},
 	}
 
 	for _, tc := range testCases {
@@ -47,38 +54,69 @@ func TestApply(t *testing.T) {
 		expectedErr         error
 	}{
 		{
-			"Simple Add",
-			add{10, 20, 30},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3},
-			nil,
-		},
-		{
-			"Simple Mult",
-			multiply{10, 20, 30},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
-			nil,
-		},
-		{
-			"Simple Halt",
+			"Halt",
 			halt{},
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			HALT,
 		},
 		{
-			"Error Halt",
-			add{5, 1, 2},
+			"Error condition halts",
+			add{position{5}, position{1}, position{2}},
 			[]int{0, 0, 0, 0, 0},
 			[]int{0, 0, 0, 0, 0},
 			ErrUnexpectedHalt,
 		},
 		{
-			"Simple Input",
-			input{3, strings.NewReader("-45")},
+			"Input",
+			input{position{3}, strings.NewReader("-45")},
 			[]int{0, 0, 0, 0},
 			[]int{0, 0, 0, -45},
+			nil,
+		},
+
+		{
+			"Position Add",
+			add{position{10}, position{20}, position{30}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+			nil,
+		},
+		{
+			"Position Mult",
+			multiply{position{10}, position{20}, position{30}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+			nil,
+		},
+
+		{
+			"Immediate Add",
+			add{immediate{10}, immediate{20}, position{0}},
+			[]int{5},
+			[]int{30},
+			nil,
+		},
+		{
+			"Immediate Mult",
+			multiply{immediate{10}, immediate{20}, position{0}},
+			[]int{5},
+			[]int{200},
+			nil,
+		},
+
+		{
+			"Mixed Add",
+			add{immediate{10}, position{0}, position{0}},
+			[]int{5},
+			[]int{15},
+			nil,
+		},
+		{
+			"Mixed Mult",
+			multiply{immediate{10}, position{0}, position{0}},
+			[]int{5},
+			[]int{50},
 			nil,
 		},
 	}
@@ -98,12 +136,30 @@ func TestApply(t *testing.T) {
 	}
 
 	// TODO this is an awful way to test simple output, we should be testing actually with the test cases
-	t.Run("Simple output", func(t *testing.T) {
+	t.Run("Position output", func(t *testing.T) {
 		buffer := bytes.NewBuffer(nil)
 		memory := []int{0, 0, 9, 0}
 		expectedMemory := []int{0, 0, 9, 0}
 		expectedOutput := "9\n"
-		if err := (output{2, buffer}.Apply(memory)); err != nil {
+		if err := (output{position{2}, buffer}.Apply(memory)); err != nil {
+			t.Fatal(err)
+		}
+
+		actualOutput := buffer.String()
+		if expectedOutput != actualOutput {
+			t.Errorf("Got output %q, expected %q", actualOutput, expectedOutput)
+		}
+		if !memEquals(expectedMemory, memory) {
+			t.Errorf("Got memory: (%+v) expected (%+v)", memory, expectedMemory)
+		}
+	})
+
+	t.Run("Immediate output", func(t *testing.T) {
+		buffer := bytes.NewBuffer(nil)
+		memory := []int{}
+		expectedMemory := []int{}
+		expectedOutput := "9\n"
+		if err := (output{immediate{9}, buffer}.Apply(memory)); err != nil {
 			t.Fatal(err)
 		}
 
