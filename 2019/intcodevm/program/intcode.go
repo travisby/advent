@@ -186,7 +186,7 @@ func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, err
 		}, nil
 	case outputOp:
 		return output{
-			parameterMode(memory[1], digitAt(memory[0], 100)).(position),
+			parameterMode(memory[1], digitAt(memory[0], 100)),
 			out,
 		}, nil
 	}
