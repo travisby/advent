@@ -1,5 +1,7 @@
 package program
 
+import "io"
+
 // Scanner is a program with its iterator
 type Scanner interface {
 	// Err returns the first non-HALT error that was encountered by the Scanner.
@@ -20,11 +22,13 @@ type scanner struct {
 	memory             []int
 	instructionPointer int
 	token              Instruction
+	in                 io.Reader
+	out                io.Writer
 }
 
 // NewScanner creates a new Program scanner from a memory block
-func NewScanner(memory []int) Scanner {
-	return &scanner{memory: memory}
+func NewScanner(memory []int, in io.Reader, out io.Writer) Scanner {
+	return &scanner{memory: memory, in: in, out: out}
 }
 
 func (s *scanner) Err() error {
@@ -40,7 +44,9 @@ func (s *scanner) Scan() bool {
 		return false
 	}
 
-	s.token, s.error = newInstruction(s.memory[s.instructionPointer:])
+	// TODO not my favorite way to add in/out
+	// maybe we can come up with a better api later
+	s.token, s.error = newInstruction(s.memory[s.instructionPointer:], s.in, s.out)
 
 	// advance the program counter
 	if s.error == nil {

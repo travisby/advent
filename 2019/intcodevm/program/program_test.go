@@ -16,7 +16,7 @@ func TestProgramHaltsIfErrorBeforeScan(t *testing.T) {
 }
 
 func TestNewScanner(t *testing.T) {
-	s := NewScanner([]int{})
+	s := NewScanner([]int{}, nil, nil)
 	if err := s.Err(); err != nil {
 		t.Errorf("NewScanner should not set an error, got: (%+v)", err)
 	}

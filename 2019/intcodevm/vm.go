@@ -2,6 +2,7 @@ package intcodevm
 
 import (
 	"errors"
+	"os"
 
 	"gitlab.com/travisby/advent/2019/intcodevm/program"
 )
@@ -55,7 +56,7 @@ func (v *VM) SetVerb(verb int) error {
 
 // Run the loaded program
 func (v *VM) Run() error {
-	p := program.NewScanner(v.memory)
+	p := program.NewScanner(v.memory, os.Stdin, os.Stdout)
 	for p.Scan() {
 		p.Instruction().Apply(v.memory)
 
