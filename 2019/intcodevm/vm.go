@@ -1,9 +1,9 @@
-package vm
+package intcodevm
 
 import (
 	"errors"
 
-	"gitlab.com/travisby/advent/2019/02/vm/program"
+	"gitlab.com/travisby/advent/2019/intcodevm/program"
 )
 
 var ErrOverflow = errors.New("The memory has overflowed")

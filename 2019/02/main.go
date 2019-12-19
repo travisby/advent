@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"gitlab.com/travisby/advent/2019/02/vm"
+	"gitlab.com/travisby/advent/2019/intcodevm"
 )
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	virtualMachine := vm.New(len(memory))
+	virtualMachine := intcodevm.New(len(memory))
 
 	// PART 1
 	if err := virtualMachine.Load(0, memory); err != nil {
