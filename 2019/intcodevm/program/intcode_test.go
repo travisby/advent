@@ -15,7 +15,7 @@ func TestInstructionParse(t *testing.T) {
 		expectedErr         error
 	}{
 		{"halt", []int{99, -1, 0, 8}, halt{}, HALT},
-		{"error", []int{98, 0, 0, 0}, nil, errors.New("Unknown opcode: 98")},
+		{"error", []int{98, 0, 0, 0}, nil, errors.New("Unexpected opcode")},
 		{"input", []int{3, 50}, input{parameter1: position{50}}, nil},
 		{"output", []int{4, 50}, output{parameter1: position{50}}, nil},
 

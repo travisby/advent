@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+// ErrUnexpectedHalt is when we have an unexpected error that leads to a halt
+var ErrUnexpectedHalt = errors.New("Unexpected err: HALT")
+
 // ErrUnknownParameterMode is propagated up when we don't recognize the parameter digit
 var ErrUnknownParameterMode = errors.New("Unknown parameter mode")
 
