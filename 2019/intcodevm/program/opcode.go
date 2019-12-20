@@ -81,6 +81,7 @@ const haltOp opcode = 99
 const inputOp opcode = 3
 const outputOp opcode = 4
 
+const lessThanOp opcode = 7
 const equalsOp opcode = 8
 
 func digitAt(n int, place int) int {

@@ -47,6 +47,12 @@ func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, err
 			parameterMode(memory[1], digitAt(memory[0], 100)),
 			out,
 		}, nil
+	case lessThanOp:
+		return lessThan{
+			parameterMode(memory[1], digitAt(memory[0], 100)),
+			parameterMode(memory[2], digitAt(memory[0], 1000)),
+			parameterMode(memory[3], digitAt(memory[0], 10000)).(position),
+		}, nil
 	case equalsOp:
 		return equals{
 			parameterMode(memory[1], digitAt(memory[0], 100)),
