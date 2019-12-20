@@ -16,8 +16,9 @@ func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, err
 	// A - mode of 3rd parameter
 	// we assume leading zeros up until the correct number of arguments
 
-	// XXX: this assumes everything but halt is a one-digit opcode preceeded by parameter modes
-	// if we ever add in an opcode like "42" we'll have to refactor
+	if opcode(memory[0]) == haltOp {
+		return halt{}, HALT
+	}
 
 	// % 10 will give us just the last digit now that we've gotten all of our two-digit opcodes out of the way
 	// for each parameter we're going to / 10, /100, etc. to get the parameter mode
@@ -36,11 +37,6 @@ func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, err
 			parameterMode(memory[2], digitAt(memory[0], 1000)),
 			parameterMode(memory[3], digitAt(memory[0], 10000)).(position),
 		}, nil
-	case haltOp % 10:
-		// now do the full comparison since we care about both digits
-		if opcode(memory[0]) == haltOp {
-			return halt{}, HALT
-		}
 	case inputOp:
 		return input{
 			parameterMode(memory[1], digitAt(memory[0], 100)).(position),
@@ -50,6 +46,12 @@ func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, err
 		return output{
 			parameterMode(memory[1], digitAt(memory[0], 100)),
 			out,
+		}, nil
+	case equalsOp:
+		return equals{
+			parameterMode(memory[1], digitAt(memory[0], 100)),
+			parameterMode(memory[2], digitAt(memory[0], 1000)),
+			parameterMode(memory[3], digitAt(memory[0], 10000)).(position),
 		}, nil
 	}
 

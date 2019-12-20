@@ -15,18 +15,23 @@ func TestInstructionParse(t *testing.T) {
 		expectedErr         error
 	}{
 		{"halt", []int{99, -1, 0, 8}, halt{}, HALT},
-		{"error", []int{98, 0, 0, 0}, nil, errors.New("Unexpected opcode")},
-		{"input", []int{3, 50}, input{parameter1: position{50}}, nil},
-		{"output", []int{4, 50}, output{parameter1: position{50}}, nil},
+		{"error", []int{-1, 0, 0, 0}, nil, errors.New("Unexpected opcode")},
 
 		{"Position add", []int{1, 10, 20, 30}, add{position{10}, position{20}, position{30}}, nil},
-		{"Position multiply", []int{2, 10, 20, 30}, multiply{position{10}, position{20}, position{30}}, nil},
-
 		{"Immediate add", []int{1101, 10, 20, 30}, add{immediate{10}, immediate{20}, position{30}}, nil},
-		{"Immediate multiply", []int{1102, 10, 20, 30}, multiply{immediate{10}, immediate{20}, position{30}}, nil},
-
 		{"Mixed add", []int{1001, 10, 20, 30}, add{position{10}, immediate{20}, position{30}}, nil},
+
+		{"Position multiply", []int{2, 10, 20, 30}, multiply{position{10}, position{20}, position{30}}, nil},
+		{"Immediate multiply", []int{1102, 10, 20, 30}, multiply{immediate{10}, immediate{20}, position{30}}, nil},
 		{"Mixed multiply", []int{1002, 10, 20, 30}, multiply{position{10}, immediate{20}, position{30}}, nil},
+
+		{"input", []int{3, 50}, input{parameter1: position{50}}, nil},
+
+		{"output", []int{4, 50}, output{parameter1: position{50}}, nil},
+
+		{"Position equals", []int{8, 10, 20, 30}, equals{position{10}, position{20}, position{30}}, nil},
+		{"Immediate equals", []int{1108, 10, 20, 30}, equals{immediate{10}, immediate{20}, position{30}}, nil},
+		{"Mixed equals", []int{1008, 10, 20, 30}, equals{position{10}, immediate{20}, position{30}}, nil},
 	}
 
 	for _, tc := range testCases {
@@ -89,6 +94,20 @@ func TestApply(t *testing.T) {
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
 			nil,
 		},
+		{
+			"Position Eq",
+			equals{position{10}, position{20}, position{30}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			nil,
+		},
+		{
+			"Position Eq (!)",
+			equals{position{10}, position{20}, position{30}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			nil,
+		},
 
 		{
 			"Immediate Add",
@@ -104,7 +123,20 @@ func TestApply(t *testing.T) {
 			[]int{200},
 			nil,
 		},
-
+		{
+			"Immediate Eq",
+			equals{immediate{10}, immediate{10}, position{0}},
+			[]int{0},
+			[]int{1},
+			nil,
+		},
+		{
+			"Immediate Eq (!)",
+			equals{immediate{10}, immediate{20}, position{0}},
+			[]int{1},
+			[]int{0},
+			nil,
+		},
 		{
 			"Mixed Add",
 			add{immediate{10}, position{0}, position{0}},
@@ -117,6 +149,13 @@ func TestApply(t *testing.T) {
 			multiply{immediate{10}, position{0}, position{0}},
 			[]int{5},
 			[]int{50},
+			nil,
+		},
+		{
+			"Mixed Eq",
+			equals{immediate{10}, position{0}, position{0}},
+			[]int{10},
+			[]int{1},
 			nil,
 		},
 	}
