@@ -63,34 +63,27 @@ func TestApply(t *testing.T) {
 		expectedErr         error
 	}{
 		{
-			"Halt",
-			halt{},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			HALT,
-		},
-		{
-			"Error condition halts",
-			add{position{5}, position{1}, position{2}},
-			[]int{0, 0, 0, 0, 0},
-			[]int{0, 0, 0, 0, 0},
-			ErrUnexpectedHalt,
-		},
-		{
-			"Input",
-			input{position{3}, strings.NewReader("-45")},
-			[]int{0, 0, 0, 0},
-			[]int{0, 0, 0, -45},
-			nil,
-		},
-
-		{
 			"Position Add",
 			add{position{10}, position{20}, position{30}},
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3},
 			nil,
 		},
+		{
+			"Immediate Add",
+			add{immediate{10}, immediate{20}, position{0}},
+			[]int{5},
+			[]int{30},
+			nil,
+		},
+		{
+			"Mixed Add",
+			add{immediate{10}, position{0}, position{0}},
+			[]int{5},
+			[]int{15},
+			nil,
+		},
+
 		{
 			"Position Mult",
 			multiply{position{10}, position{20}, position{30}},
@@ -99,19 +92,28 @@ func TestApply(t *testing.T) {
 			nil,
 		},
 		{
-			"Position Eq",
-			equals{position{10}, position{20}, position{30}},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			"Immediate Mult",
+			multiply{immediate{10}, immediate{20}, position{0}},
+			[]int{5},
+			[]int{200},
 			nil,
 		},
 		{
-			"Position Eq (!)",
-			equals{position{10}, position{20}, position{30}},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			"Mixed Mult",
+			multiply{immediate{10}, position{0}, position{0}},
+			[]int{5},
+			[]int{50},
 			nil,
 		},
+
+		{
+			"Input",
+			input{position{3}, strings.NewReader("-45")},
+			[]int{0, 0, 0, 0},
+			[]int{0, 0, 0, -45},
+			nil,
+		},
+
 		{
 			"Position LT",
 			lessThan{position{10}, position{20}, position{30}},
@@ -124,35 +126,6 @@ func TestApply(t *testing.T) {
 			lessThan{position{10}, position{20}, position{30}},
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			nil,
-		},
-
-		{
-			"Immediate Add",
-			add{immediate{10}, immediate{20}, position{0}},
-			[]int{5},
-			[]int{30},
-			nil,
-		},
-		{
-			"Immediate Mult",
-			multiply{immediate{10}, immediate{20}, position{0}},
-			[]int{5},
-			[]int{200},
-			nil,
-		},
-		{
-			"Immediate Eq",
-			equals{immediate{10}, immediate{10}, position{0}},
-			[]int{0},
-			[]int{1},
-			nil,
-		},
-		{
-			"Immediate Eq (!)",
-			equals{immediate{10}, immediate{20}, position{0}},
-			[]int{1},
-			[]int{0},
 			nil,
 		},
 		{
@@ -170,17 +143,39 @@ func TestApply(t *testing.T) {
 			nil,
 		},
 		{
-			"Mixed Add",
-			add{immediate{10}, position{0}, position{0}},
-			[]int{5},
-			[]int{15},
+			"Mixed LT",
+			lessThan{immediate{10}, position{0}, position{0}},
+			[]int{10},
+			[]int{0},
+			nil,
+		},
+
+		{
+			"Position Eq",
+			equals{position{10}, position{20}, position{30}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			nil,
 		},
 		{
-			"Mixed Mult",
-			multiply{immediate{10}, position{0}, position{0}},
-			[]int{5},
-			[]int{50},
+			"Position Eq (!)",
+			equals{position{10}, position{20}, position{30}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			nil,
+		},
+		{
+			"Immediate Eq",
+			equals{immediate{10}, immediate{10}, position{0}},
+			[]int{0},
+			[]int{1},
+			nil,
+		},
+		{
+			"Immediate Eq (!)",
+			equals{immediate{10}, immediate{20}, position{0}},
+			[]int{1},
+			[]int{0},
 			nil,
 		},
 		{
@@ -190,12 +185,20 @@ func TestApply(t *testing.T) {
 			[]int{1},
 			nil,
 		},
+
 		{
-			"Mixed LT",
-			lessThan{immediate{10}, position{0}, position{0}},
-			[]int{10},
-			[]int{0},
-			nil,
+			"Halt",
+			halt{},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			HALT,
+		},
+		{
+			"Error condition halts",
+			add{position{5}, position{1}, position{2}},
+			[]int{0, 0, 0, 0, 0},
+			[]int{0, 0, 0, 0, 0},
+			ErrUnexpectedHalt,
 		},
 	}
 
