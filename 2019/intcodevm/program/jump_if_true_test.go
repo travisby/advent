@@ -7,11 +7,11 @@ import (
 
 func TestPositionJumpIfTrue(t *testing.T) {
 	var ip int
-	expectedIp := 99
+	expectedIp := 0
 
-	j := jumpTrue{position{0}, position{expectedIp}, &ip}
+	j := jumpTrue{position{0}, position{1}, &ip}
 
-	if err := j.Apply([]int{1}); err != nil {
+	if err := j.Apply([]int{1, expectedIp}); err != nil {
 		log.Fatal(err)
 	}
 
@@ -24,9 +24,9 @@ func TestPositionNoJumpJumpIfTrue(t *testing.T) {
 	var ip int
 	expectedIp := ip
 
-	j := jumpTrue{position{0}, position{99}, &ip}
+	j := jumpTrue{position{0}, position{1}, &ip}
 
-	if err := j.Apply([]int{0}); err != nil {
+	if err := j.Apply([]int{0, 99}); err != nil {
 		log.Fatal(err)
 	}
 
@@ -39,9 +39,9 @@ func TestImmediateJumpIfTrue(t *testing.T) {
 	var ip int
 	expectedIp := 99
 
-	j := jumpTrue{immediate{10}, position{expectedIp}, &ip}
+	j := jumpTrue{immediate{1}, immediate{expectedIp}, &ip}
 
-	if err := j.Apply([]int{1}); err != nil {
+	if err := j.Apply([]int{}); err != nil {
 		log.Fatal(err)
 	}
 

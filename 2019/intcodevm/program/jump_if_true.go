@@ -6,15 +6,23 @@ import (
 
 type jumpTrue struct {
 	parameter parameter
-	goTo      position
-	pc        *int
+	goTo      parameter
+	ip        *int
 }
 
 func (j jumpTrue) Apply(memory []int) error {
-	if i, err := j.parameter.Get(memory); err != nil {
+	i, err := j.parameter.Get(memory)
+	if err != nil {
 		return err
-	} else if *i != 0 {
-		*j.pc = j.goTo.address
+	}
+
+	ip, err := j.goTo.Get(memory)
+	if err != nil {
+		return err
+	}
+
+	if *i != 0 {
+		*j.ip = *ip
 	}
 
 	return nil
