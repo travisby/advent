@@ -50,7 +50,7 @@ func (s *scanner) Scan() bool {
 
 	// advance the program counter
 	if s.error == nil {
-		s.instructionPointer += s.token.numParameters() + 1
+		s.instructionPointer += s.token.numAdvanceIP()
 	}
 
 	return s.error == nil

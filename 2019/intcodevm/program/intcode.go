@@ -28,7 +28,7 @@ type Instruction interface {
 	// Apply performs the Instruction instruction on the provided piece of memory
 	Apply(memory []int) error
 	// NumParametrs returns the number of ints that made up the instruction
-	numParameters() int
+	numAdvanceIP() int
 	String() string
 }
 
@@ -50,8 +50,8 @@ func (a add) Apply(memory []int) error {
 
 	return a.dest.Set(*p1+*p2, memory)
 }
-func (a add) numParameters() int {
-	return 3
+func (a add) numAdvanceIP() int {
+	return 4
 }
 func (a add) String() string {
 	return fmt.Sprintf("Add{%s, %s} -> %s", a.parameter1, a.parameter2, a.dest)
@@ -75,8 +75,8 @@ func (m multiply) Apply(memory []int) error {
 
 	return m.dest.Set(*p1**p2, memory)
 }
-func (m multiply) numParameters() int {
-	return 3
+func (m multiply) numAdvanceIP() int {
+	return 4
 }
 func (m multiply) String() string {
 	return fmt.Sprintf("Multiply{%s, %s} -> %s", m.parameter1, m.parameter2, m.dest)
@@ -88,7 +88,7 @@ type halt struct {
 func (h halt) Apply(memory []int) error {
 	return HALT
 }
-func (h halt) numParameters() int {
+func (h halt) numAdvanceIP() int {
 	return 0
 }
 func (h halt) String() string {
@@ -117,8 +117,8 @@ func (i input) Apply(memory []int) error {
 	return i.parameter1.Set(temp, memory)
 }
 
-func (i input) numParameters() int {
-	return 1
+func (i input) numAdvanceIP() int {
+	return 2
 }
 func (i input) String() string {
 	return fmt.Sprintf("input{%d}", i.parameter1)
@@ -139,8 +139,8 @@ func (o output) Apply(memory []int) error {
 	return nil
 }
 
-func (o output) numParameters() int {
-	return 1
+func (o output) numAdvanceIP() int {
+	return 2
 }
 func (o output) String() string {
 	return fmt.Sprintf("output{%d}", o.parameter1)
