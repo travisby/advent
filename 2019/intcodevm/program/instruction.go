@@ -53,6 +53,12 @@ func newInstruction(memory []int, in io.Reader, out io.Writer, instructionPointe
 			parameterMode(memory[2], digitAt(memory[0], 1000)).(position),
 			instructionPointer,
 		}, nil
+	case jumpFalseOp:
+		return jumpFalse{
+			parameterMode(memory[1], digitAt(memory[0], 100)),
+			parameterMode(memory[2], digitAt(memory[0], 1000)).(position),
+			instructionPointer,
+		}, nil
 	case lessThanOp:
 		return lessThan{
 			parameterMode(memory[1], digitAt(memory[0], 100)),

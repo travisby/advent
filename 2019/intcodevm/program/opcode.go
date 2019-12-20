@@ -81,7 +81,7 @@ const haltOp opcode = 99
 const inputOp opcode = 3
 const outputOp opcode = 4
 const jumpTrueOp opcode = 5
-
+const jumpFalseOp opcode = 6
 const lessThanOp opcode = 7
 const equalsOp opcode = 8
 
