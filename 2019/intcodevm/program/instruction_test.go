@@ -28,6 +28,9 @@ func TestInstructionParse(t *testing.T) {
 
 		{"output", []int{4, 50}, output{parameter1: position{50}}, nil},
 
+		{"Position JumpIfTrue", []int{5, 50, 34}, jumpTrue{position{50}, position{34}, nil}, nil},
+		{"Immediate JumpIfTrue", []int{105, 50, 34}, jumpTrue{immediate{50}, position{34}, nil}, nil},
+
 		{"Position equals", []int{8, 10, 20, 30}, equals{position{10}, position{20}, position{30}}, nil},
 		{"Immediate equals", []int{1108, 10, 20, 30}, equals{immediate{10}, immediate{20}, position{30}}, nil},
 		{"Mixed equals", []int{1008, 10, 20, 30}, equals{position{10}, immediate{20}, position{30}}, nil},
@@ -39,7 +42,7 @@ func TestInstructionParse(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			intcode, err := newInstruction(tc.args, nil, nil)
+			intcode, err := newInstruction(tc.args, nil, nil, nil)
 			if err == nil && err != tc.expectedErr {
 				t.Errorf("Got err (%+v) expected (%+v)", err, tc.expectedErr)
 			} else if err != nil && tc.expectedErr == nil {

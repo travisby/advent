@@ -8,7 +8,7 @@ import (
 // ErrUnknownOpcode is when we don't support the presented two-digit opcode
 var ErrUnknownOpcode = errors.New("Unexpected opcode")
 
-func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, error) {
+func newInstruction(memory []int, in io.Reader, out io.Writer, instructionPointer *int) (Instruction, error) {
 	// instructions are of form ABCDE
 	// DE - two-digit opcode
 	// C - mode of 1st parameter
@@ -46,6 +46,12 @@ func newInstruction(memory []int, in io.Reader, out io.Writer) (Instruction, err
 		return output{
 			parameterMode(memory[1], digitAt(memory[0], 100)),
 			out,
+		}, nil
+	case jumpTrueOp:
+		return jumpTrue{
+			parameterMode(memory[1], digitAt(memory[0], 100)),
+			parameterMode(memory[2], digitAt(memory[0], 1000)).(position),
+			instructionPointer,
 		}, nil
 	case lessThanOp:
 		return lessThan{

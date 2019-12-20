@@ -44,9 +44,9 @@ func (s *scanner) Scan() bool {
 		return false
 	}
 
-	// TODO not my favorite way to add in/out
+	// TODO not my favorite way to add in/out/ip
 	// maybe we can come up with a better api later
-	s.token, s.error = newInstruction(s.memory[s.instructionPointer:], s.in, s.out)
+	s.token, s.error = newInstruction(s.memory[s.instructionPointer:], s.in, s.out, &s.instructionPointer)
 
 	// advance the program counter
 	if s.error == nil {
