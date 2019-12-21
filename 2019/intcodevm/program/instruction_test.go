@@ -29,10 +29,12 @@ func TestInstructionParse(t *testing.T) {
 		{"output", []int{4, 50}, output{parameter1: position{50}}, nil},
 
 		{"Position JumpIfTrue", []int{5, 50, 34}, jumpTrue{position{50}, position{34}, nil}, nil},
-		{"Immediate JumpIfTrue", []int{105, 50, 34}, jumpTrue{immediate{50}, position{34}, nil}, nil},
+		{"Immediate JumpIfTrue", []int{1105, 50, 34}, jumpTrue{immediate{50}, immediate{34}, nil}, nil},
+		{"Mixed JumpIfTrue", []int{105, 50, 34}, jumpTrue{immediate{50}, position{34}, nil}, nil},
 
 		{"Position JumpIfFalse", []int{6, 50, 34}, jumpFalse{position{50}, position{34}, nil}, nil},
-		{"Immediate JumpIfFalse", []int{106, 50, 34}, jumpFalse{immediate{50}, position{34}, nil}, nil},
+		{"Mixed JumpIfFalse", []int{1106, 50, 34}, jumpFalse{immediate{50}, immediate{34}, nil}, nil},
+		{"Mixed JumpIfFalse", []int{106, 50, 34}, jumpFalse{immediate{50}, position{34}, nil}, nil},
 
 		{"Position equals", []int{8, 10, 20, 30}, equals{position{10}, position{20}, position{30}}, nil},
 		{"Immediate equals", []int{1108, 10, 20, 30}, equals{immediate{10}, immediate{20}, position{30}}, nil},

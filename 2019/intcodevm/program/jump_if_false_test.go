@@ -49,3 +49,18 @@ func TestImmediateJumpIfFalse(t *testing.T) {
 		log.Fatalf("Got instruction pointer (%d) expected %d", ip, expectedIp)
 	}
 }
+
+func TestMixedJumpIfFalse(t *testing.T) {
+	var ip int
+	expectedIp := 99
+
+	j := jumpFalse{position{0}, immediate{expectedIp}, &ip}
+
+	if err := j.Apply([]int{0}); err != nil {
+		log.Fatal(err)
+	}
+
+	if ip != expectedIp {
+		log.Fatalf("Got instruction pointer (%d) expected %d", ip, expectedIp)
+	}
+}
