@@ -43,9 +43,11 @@ func main() {
 
 	for i := range is {
 		for j := range is {
-			if is[i]+is[j] == 2020 {
-				fmt.Printf("%d\n", is[i]*is[j])
-				return
+			for k := range is {
+				if is[i]+is[j]+is[k] == 2020 {
+					fmt.Printf("%d\n", is[i]*is[j]*is[k])
+					return
+				}
 			}
 		}
 	}
