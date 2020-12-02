@@ -24,6 +24,7 @@ func (m Module) Fuel() int {
 		return 0
 	}
 
+	// p1: return fuel
 	return fuel + Module(fuel).Fuel()
 }
 
