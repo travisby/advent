@@ -14,37 +14,42 @@ var PASSWORD_LINE_RE = regexp.MustCompile("^([0-9]+)-([0-9]+) ([a-zA-Z0-9]): ([a
 
 type passwordLine struct {
 	policy struct {
-		r             string
-		lowWaterMark  int
-		highWaterMark int
+		r       string
+		indices []int
 	}
 	password string
 }
 
 func (p passwordLine) isValid() bool {
-	c := strings.Count(p.password, p.policy.r)
-	return c >= p.policy.lowWaterMark && c <= p.policy.highWaterMark
+	substr := make([]byte, len(p.policy.indices))
+	for i, j := range p.policy.indices {
+		if j > len(p.password) {
+			return false
+		}
+		substr[i] = p.password[j-1]
+	}
+
+	return strings.Count(string(substr), p.policy.r) == 1
 }
 
 func newPasswordLine(s string) (*passwordLine, error) {
 	pass := PASSWORD_LINE_RE.FindStringSubmatch(s)
-	if len(pass) != 5 {
+	if len(pass) < 5 {
 		return nil, fmt.Errorf("Unknown password format %q", s)
 	}
-	p := passwordLine{password: pass[4]}
-	p.policy.r = pass[3]
+	p := passwordLine{}
 
-	var err error
-
-	p.policy.lowWaterMark, err = strconv.Atoi(pass[1])
-	if err != nil {
-		return nil, fmt.Errorf("%w: while decoding low watermark %q", err, pass[0])
+	// indices carrying password indices
+	for _, i := range []int{1, 2} {
+		j, err := strconv.Atoi(pass[i])
+		if err != nil {
+			return nil, fmt.Errorf("%w: cannot convert pass index: %q", err, pass[i])
+		}
+		p.policy.indices = append(p.policy.indices, j)
 	}
 
-	p.policy.highWaterMark, err = strconv.Atoi(pass[2])
-	if err != nil {
-		return nil, fmt.Errorf("%w: while decoding high watermark %q", err, pass[1])
-	}
+	p.password = pass[len(pass)-1]
+	p.policy.r = pass[len(pass)-2]
 
 	return &p, nil
 }
