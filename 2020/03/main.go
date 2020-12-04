@@ -113,5 +113,34 @@ func main() {
 	for more := true; more; more = treeMap.traverse(3, 1) {
 	}
 
-	fmt.Printf("%d\n", treeMap.treesEncountered)
+	log.Printf("Part One: %d", treeMap.treesEncountered)
+
+	// Part 2, get all of these plans and multiply their results
+	p2 := 1
+	treeMap.reset()
+	for more := true; more; more = treeMap.traverse(1, 1) {
+	}
+	p2 *= treeMap.treesEncountered
+
+	treeMap.reset()
+	for more := true; more; more = treeMap.traverse(3, 1) {
+	}
+	p2 *= treeMap.treesEncountered
+
+	treeMap.reset()
+	for more := true; more; more = treeMap.traverse(5, 1) {
+	}
+	p2 *= treeMap.treesEncountered
+
+	treeMap.reset()
+	for more := true; more; more = treeMap.traverse(7, 1) {
+	}
+	p2 *= treeMap.treesEncountered
+
+	treeMap.reset()
+	for more := true; more; more = treeMap.traverse(1, 2) {
+	}
+	p2 *= treeMap.treesEncountered
+
+	log.Printf("Part Two: %d", p2)
 }
