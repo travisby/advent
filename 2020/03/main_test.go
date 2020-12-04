@@ -212,3 +212,24 @@ func TestTraversal(t *testing.T) {
 		})
 	}
 }
+
+func TestReset(t *testing.T) {
+	m := treeMap{curPos: struct {
+		x int
+		y int
+	}{5, 5},
+		treesEncountered: 5,
+	}
+	m.reset()
+
+	if m.curPos != struct {
+		x int
+		y int
+	}{0, 0} {
+		t.Errorf("Expected curPos to be reset, was actually %+v", m.curPos)
+	}
+
+	if m.treesEncountered != 0 {
+		t.Errorf("Expected treesEncoutnered to be reset, was actually %+v", m.treesEncountered)
+	}
+}

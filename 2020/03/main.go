@@ -40,6 +40,12 @@ type treeMap struct {
 	treesEncountered int
 }
 
+func (t *treeMap) reset() {
+	t.curPos.x = 0
+	t.curPos.y = 0
+	t.treesEncountered = 0
+}
+
 func (t *treeMap) addLayer(ts treeLayer) {
 	t.layers = append(t.layers, ts)
 }
