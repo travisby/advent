@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 // ErrNoInput is propagated up when an input instruction was reached but there is no input to read from
@@ -19,18 +20,27 @@ type input struct {
 }
 
 func (i input) Apply(memory []int) error {
-	var inputer = io.Reader(os.Stdin)
-	if i.input != nil {
-		inputer = i.input
+	inputer := i.input
+	if inputer == nil {
+		inputer = io.Reader(os.Stdin)
 	}
 
-	// XXX: maybe shouldn't directly write to Stderr
-	fmt.Fprintf(os.Stderr, "Please enter input: ")
+	// let's remind the program runner we want input, if we haven't gotten any after some delay
+	inputGiven := make(chan struct{})
+	go func() {
+		select {
+		case <-inputGiven:
+		case <-time.After(500 * time.Millisecond):
+			fmt.Fprintf(os.Stderr, "Please enter input: ")
+		}
+	}()
 
 	var temp int
 	if _, err := fmt.Fscanf(inputer, "%d\n", &temp); err != nil {
 		return ErrInvalidInput
 	}
+	// we finally got our input, signal that we might not need to ask for input
+	close(inputGiven)
 
 	return i.parameter1.Set(temp, memory)
 }
