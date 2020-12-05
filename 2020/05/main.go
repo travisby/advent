@@ -93,4 +93,24 @@ func main() {
 	sort.Sort(sort.Reverse(boardingPasses(bps)))
 
 	log.Printf("Part 1: %d", bps[0].seatID())
+
+	var bp *boardingPass
+	// since we're comparing i to i+1
+	// we want to loop to one-less than the end
+	for i := 0; i < len(bps)-1; i++ {
+		// if we find a scenario where  the next seat isn't simply - 1
+		// we know -1 is our seat!
+		if uint16(bps[i]-1) != uint16(bps[i+1]) {
+			temp := boardingPass(uint16(bps[i]) - 1)
+			bp = &temp
+			break
+		}
+	}
+
+	if bp == nil {
+		log.Fatal("Did not find our seat!")
+	}
+
+	log.Printf("Part 2: %d", bp.seatID())
+
 }
