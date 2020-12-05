@@ -15,6 +15,15 @@ type orbital struct {
 	orbittedBy []*orbital
 }
 
+func (o *orbital) allOrbits() []*orbital {
+	var allOrbits []*orbital
+	for curPos := o; curPos.orbits != nil; curPos = curPos.orbits {
+		allOrbits = append(allOrbits, curPos)
+	}
+
+	return allOrbits
+}
+
 func (o *orbital) addOrbittedBy(n *orbital) {
 	if n.orbits == nil {
 		n.orbits = o
@@ -30,9 +39,7 @@ func (m orbitalMap) checksum() uint {
 	// we calculate the checksum for intermediaries many times over
 	var checksum uint
 	for _, v := range m {
-		for curPos := v; curPos.orbits != nil; curPos = curPos.orbits {
-			checksum++
-		}
+		checksum += uint(len(v.allOrbits()))
 	}
 
 	return checksum
@@ -54,12 +61,44 @@ func (m orbitalMap) addOrbitByName(parent string, child string) error {
 
 	return nil
 }
+
 func (m orbitalMap) getOrbital(name string) (*orbital, bool) {
 	res, ok := m[name]
 	return res, ok
 }
+
 func (m orbitalMap) addCOM(name string) {
 	m[name] = &orbital{name, nil, []*orbital{}}
+}
+
+func (m orbitalMap) minimumOrbitalTransfers(a, b string) (*uint, error) {
+	aOrbital, ok := m[a]
+	if !ok {
+		return nil, ErrUnknownParent
+	}
+
+	bOrbital, ok := m[b]
+	if !ok {
+		return nil, ErrUnknownParent
+	}
+
+	aParents := aOrbital.allOrbits()
+	bParents := bOrbital.allOrbits()
+
+	// find the deepest shared parent
+	// XXX: very inefficient as well
+	for i := range aParents {
+		for j := range bParents {
+			if aParents[i] == bParents[j] {
+				temp := uint(i + j)
+				// You for some reason don't actually count the first/last hops... confusingly
+				temp -= 2
+				return &temp, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("Err")
 }
 
 func newOrbitalMap() orbitalMap {
@@ -107,4 +146,11 @@ func main() {
 	}
 
 	log.Printf("Part 1: %d", om.checksum())
+
+	p2, err := om.minimumOrbitalTransfers("YOU", "SAN")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Part 2: %d", *p2)
 }
