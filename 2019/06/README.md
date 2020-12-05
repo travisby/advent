@@ -48,3 +48,5 @@ COM orbits nothing.
 The total number of direct and indirect orbits in this example is 42.
 
 What is the total number of direct and indirect orbits in your map data?
+
+Your puzzle answer was 308790.
