@@ -21,6 +21,9 @@ func toPerson(s string) person {
 // a group is simply a list of people that together answer questions
 type group []person
 
+// count for a group is the number of total unique YES's in a group
+// e.g. [[ab] [ac]] -> 3
+// this satisfies the count for P1
 func (g group) count() uint {
 	counter := map[byte]struct{}{}
 	for _, p := range g {
@@ -29,6 +32,26 @@ func (g group) count() uint {
 		}
 	}
 	return uint(len(counter))
+}
+
+// count for a group is the number of unanimous YES'
+// e.g. [[ab] [ac]] -> 1
+// this satisfies the count for P2
+func (g group) countAllAnswered() uint {
+	counter := map[byte]uint{}
+	for _, p := range g {
+		for _, r := range p {
+			counter[r] += 1
+		}
+	}
+
+	var count uint
+	for _, v := range counter {
+		if v == uint(len(g)) {
+			count += 1
+		}
+	}
+	return count
 }
 
 func main() {
@@ -75,4 +98,11 @@ func main() {
 	}
 
 	log.Printf("Part 1: %d", count)
+
+	count = 0
+	for _, g := range gs {
+		count += g.countAllAnswered()
+	}
+
+	log.Printf("Part 2: %d", count)
 }
