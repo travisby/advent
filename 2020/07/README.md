@@ -27,3 +27,7 @@ A light red bag, which can hold bright white and muted yellow bags, either of wh
 So, in this example, the number of bag colors that can eventually contain at least one shiny gold bag is 4.
 
 How many bag colors can eventually contain at least one shiny gold bag? (The list of rules is quite long; make sure you get all of it.)
+
+Your puzzle answer was 222.
+
+The first half of this puzzle is complete! It provides one gold star: *
