@@ -38,6 +38,20 @@ func (b bagType) recursiveContainedBy() []*bagType {
 	return contains
 }
 
+func (b bagType) recursiveContains() []*bagType {
+	contains := make([]*bagType, 0, len(b.contains))
+
+	for v, k := range b.contains {
+		vContains := v.recursiveContains()
+		for i := 0; i < k; i++ {
+			contains = append(contains, v)
+			contains = append(contains, vContains...)
+		}
+	}
+
+	return contains
+}
+
 type bagLookup map[string]*bagType
 
 func (b bagLookup) get(color string) *bagType {
@@ -108,4 +122,5 @@ func main() {
 	}
 
 	log.Printf("Part 1: %d", len(bl.get("shiny gold").recursiveContainedBy()))
+	log.Printf("Part 2: %d", len(bl.get("shiny gold").recursiveContains()))
 }
