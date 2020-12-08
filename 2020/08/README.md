@@ -39,3 +39,9 @@ This is an infinite loop: with this sequence of jumps, the program will run fore
 Immediately before the program would run an instruction a second time, the value in the accumulator is 5.
 
 Run your copy of the boot code. Immediately before any instruction is executed a second time, what value is in the accumulator?
+
+Your puzzle answer was 1384.
+
+The first half of this puzzle is complete! It provides one gold star: *
+
+
