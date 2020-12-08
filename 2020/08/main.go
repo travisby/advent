@@ -15,6 +15,8 @@ type vm struct {
 	// not a von-neuman machine
 	// our memory is separate from our program instruction
 	inst []instruction
+	// RO copy of instructions
+	originalInst []instruction
 
 	// keys are isntructions we've already executed
 	visited map[int]struct{}
@@ -24,32 +26,39 @@ func (v *vm) reset() {
 	v.pc = 0
 	v.acc = 0
 	v.visited = map[int]struct{}{}
+	copy(v.inst, v.originalInst)
 }
 func newVM(inst []instruction) *vm {
-	return &vm{inst: inst, visited: map[int]struct{}{}}
+	originalInst := make([]instruction, len(inst))
+
+	copy(originalInst, inst)
+	return &vm{inst: inst, originalInst: originalInst, visited: map[int]struct{}{}}
 }
-func (v *vm) runOne() {
+func (v *vm) runOne() (more bool) {
 	v.visited[v.pc] = struct{}{}
 
 	v.inst[v.pc].apply(v)
+
+	return v.pc < len(v.inst)
 }
 func (v *vm) inInfiniteLoop() bool {
 	_, ok := v.visited[v.pc]
 	return ok
 }
 
-// XXX: No protection if there is no infinite loop
-// we'll actually crash on slice access
-func (v *vm) runUntilInfiniteLoop() {
-	for !v.inInfiniteLoop() {
-		v.runOne()
+func (v *vm) runUntilInfiniteLoop() (finished bool) {
+	for !v.inInfiniteLoop() && !finished {
+		finished = !v.runOne()
 	}
+	return finished
 }
 
 type instruction interface {
 	apply(*vm)
 }
-type nop struct{}
+type nop struct {
+	arg int
+}
 
 func (n nop) apply(v *vm) {
 	v.pc++
@@ -93,7 +102,7 @@ func parseInst(s string) (instruction, error) {
 	case "acc":
 		inst = acc{arg}
 	case "nop":
-		inst = nop{}
+		inst = nop{arg}
 	}
 
 	return inst, nil
@@ -136,4 +145,19 @@ func main() {
 	v.runUntilInfiniteLoop()
 
 	log.Printf("Part 1: %d", v.acc)
+
+	finished := false
+	for i := 0; i < len(v.originalInst) || finished; i++ {
+		v.reset()
+		if inst, ok := v.originalInst[i].(nop); ok {
+			v.inst[i] = jmp{inst.arg}
+		} else if inst, ok := v.originalInst[i].(jmp); ok {
+			v.inst[i] = nop{inst.arg}
+		}
+
+		finished = v.runUntilInfiniteLoop()
+		if finished {
+			log.Printf("Part 2: %d", v.acc)
+		}
+	}
 }
