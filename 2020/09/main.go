@@ -113,21 +113,30 @@ func main() {
 		log.Fatal("Missing Part 1")
 	}
 
-	for j := 0; j < len(decoder.ring); j++ {
+	var weakness *int
+	for j := 0; j < len(decoder.ring)-1 && weakness == nil; j++ {
 		smallest := decoder.ring[j]
 		largest := decoder.ring[j]
-		for k := j; k < len(decoder.ring) && smallest*largest < *i; k++ {
+		sum := decoder.ring[j]
+		for k := j + 1; k < len(decoder.ring) && sum < *i; k++ {
+			sum += decoder.ring[k]
 			if decoder.ring[k] < smallest {
 				smallest = decoder.ring[k]
 			} else if decoder.ring[k] > largest {
 				largest = decoder.ring[k]
 			}
-
 		}
 
-		if smallest*largest == *i {
-			log.Printf("Part 2: %d", smallest*largest)
+		if sum == *i {
+			temp := smallest + largest
+			weakness = &temp
 			break
 		}
 	}
+
+	if weakness == nil {
+		log.Fatal("Missing Part 2")
+	}
+
+	log.Printf("Part 2: %d", *weakness)
 }
