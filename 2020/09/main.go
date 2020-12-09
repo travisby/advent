@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"container/ring"
 	"errors"
 	"fmt"
 	"log"
@@ -14,33 +13,30 @@ const preambleSize = 25
 
 var ErrInvalidNext = errors.New("The next number is not the sum of preceding numbers")
 
-type decoderRing struct {
-	*ring.Ring
+// a greedyDecoderRing remembers all of the content it's actually seen
+// but still acts as a ring buffer
+// just with a secret old storage ability
+type greedyDecoderRing struct {
+	ring    []int
+	zeroPos int
+	sz      int
 }
 
-func newDecoderRing(preamble []int) *decoderRing {
-	r := ring.New(len(preamble))
-	for _, v := range preamble {
-		r = r.Next()
-		r.Value = v
-	}
-
-	return &decoderRing{r}
+func newDecoderRing(preamble []int) *greedyDecoderRing {
+	return &greedyDecoderRing{preamble, 0, len(preamble)}
 }
 
-func (d *decoderRing) next(i int) error {
-	km, err := d.toKeyMap()
-	if err != nil {
-		return err
-	}
+func (d *greedyDecoderRing) next(i int) error {
+	km := d.toKeyMap()
 
 	for k := range km {
 		// if there exists the key that is i - our current number
 		// (aka i-k + k = i), where (i-k) exists
 		if _, ok := km[i-k]; ok {
 			// valid!
-			d.Ring = d.Next()
-			d.Value = i
+
+			d.ring = append(d.ring, i)
+			d.zeroPos++
 			return nil
 		}
 	}
@@ -50,24 +46,12 @@ func (d *decoderRing) next(i int) error {
 
 var ErrWrongStuffing = errors.New("Someone stuffed something baaad in here")
 
-func (d *decoderRing) toKeyMap() (map[int]struct{}, error) {
-	s := make(map[int]struct{}, d.Len())
-	var err error
-
-	d.Do(func(i interface{}) {
-		if err != nil {
-			return
-		}
-
-		in, ok := i.(int)
-		if !ok {
-			err = fmt.Errorf("%w: %+v", ErrWrongStuffing, i)
-			return
-		}
-
-		s[in] = struct{}{}
-	})
-	return s, err
+func (d *greedyDecoderRing) toKeyMap() map[int]struct{} {
+	m := map[int]struct{}{}
+	for _, k := range d.ring[len(d.ring)-d.sz:] {
+		m[k] = struct{}{}
+	}
+	return m
 }
 
 func main() {
@@ -127,5 +111,23 @@ func main() {
 		log.Printf("Part 1: %d", *i)
 	} else {
 		log.Fatal("Missing Part 1")
+	}
+
+	for j := 0; j < len(decoder.ring); j++ {
+		smallest := decoder.ring[j]
+		largest := decoder.ring[j]
+		for k := j; k < len(decoder.ring) && smallest*largest < *i; k++ {
+			if decoder.ring[k] < smallest {
+				smallest = decoder.ring[k]
+			} else if decoder.ring[k] > largest {
+				largest = decoder.ring[k]
+			}
+
+		}
+
+		if smallest*largest == *i {
+			log.Printf("Part 2: %d", smallest*largest)
+			break
+		}
 	}
 }
