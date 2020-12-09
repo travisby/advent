@@ -43,3 +43,7 @@ Here is a larger example which only considers the previous 5 numbers (and has a 
 In this example, after the 5-number preamble, almost every number is the sum of two of the previous 5 numbers; the only number that does not follow this rule is 127.
 
 The first step of attacking the weakness in the XMAS data is to find the first number in the list (after the preamble) which is not the sum of two of the 25 numbers before it. What is the first number that does not have this property?
+
+Your puzzle answer was 88311122.
+
+The first half of this puzzle is complete! It provides one gold star: *
