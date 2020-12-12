@@ -82,6 +82,34 @@ func (a seatLayout) PerformRound() seatLayout {
 	return b
 }
 
+func (a seatLayout) PerformRound2() seatLayout {
+	/*
+		If a seat is empty (L) and there are no occupied seats adjacent to it, the seat becomes occupied.
+		If a seat is occupied (#) and four or more seats adjacent to it are also occupied, the seat becomes empty.
+		Otherwise, the seat's state does not change.
+	*/
+
+	b := a.DeepCopy()
+
+	for i := range b {
+		for j := range a[i] {
+			if a[i][j] == EMPTY {
+				if a.numInSightOccupied(i, j) == 0 {
+					b[i][j] = OCCUPIED
+				}
+			} else if a[i][j] == OCCUPIED {
+				if a.numInSightOccupied(i, j) >= 5 {
+					b[i][j] = EMPTY
+				}
+			} else if a[i][j] == FLOOR {
+				// ignore
+			}
+		}
+	}
+
+	return b
+}
+
 func (a seatLayout) numAdjacentOccupied(i, j int) int {
 	adjacents := make([]seat, 0, 8)
 
@@ -121,6 +149,106 @@ func (a seatLayout) numAdjacentOccupied(i, j int) int {
 	}
 	return countOccupied
 }
+
+func (a seatLayout) numInSightOccupied(y, x int) int {
+	count := 0
+
+	// north
+	for i := y - 1; i >= 0; i-- {
+		if a[i][x] == OCCUPIED {
+			count++
+			break
+		} else if a[i][x] == EMPTY {
+			break
+		}
+	}
+
+	// south
+	for i := y + 1; i < len(a); i++ {
+		if a[i][x] == OCCUPIED {
+			count++
+			break
+		} else if a[i][x] == EMPTY {
+			break
+		}
+	}
+
+	// east
+	for i := x + 1; i < len(a[y]); i++ {
+		if a[y][i] == OCCUPIED {
+			count++
+			break
+		} else if a[y][i] == EMPTY {
+			break
+		}
+	}
+
+	// west
+	for i := x - 1; i >= 0; i-- {
+		if a[y][i] == OCCUPIED {
+			count++
+			break
+		} else if a[y][i] == EMPTY {
+			break
+		}
+	}
+
+	var i, j int
+	i = y + 1
+	j = x + 1
+	for i >= 0 && j >= 0 && i < len(a) && j < len(a[i]) {
+		if a[i][j] == OCCUPIED {
+			count++
+			break
+		} else if a[i][j] == EMPTY {
+			break
+		}
+		i++
+		j++
+	}
+
+	i = y + 1
+	j = x - 1
+	for i >= 0 && j >= 0 && i < len(a) && j < len(a[i]) {
+		if a[i][j] == OCCUPIED {
+			count++
+			break
+		} else if a[i][j] == EMPTY {
+			break
+		}
+		i++
+		j--
+	}
+
+	i = y - 1
+	j = x + 1
+	for i >= 0 && j >= 0 && i < len(a) && j < len(a[i]) {
+		if a[i][j] == OCCUPIED {
+			count++
+			break
+		} else if a[i][j] == EMPTY {
+			break
+		}
+		i--
+		j++
+	}
+
+	i = y - 1
+	j = x - 1
+	for i >= 0 && j >= 0 && i < len(a) && j < len(a[i]) {
+		if a[i][j] == OCCUPIED {
+			count++
+			break
+		} else if a[i][j] == EMPTY {
+			break
+		}
+		i--
+		j--
+	}
+
+	return count
+}
+
 func (a seatLayout) numOccupied() int {
 	numOccupied := 0
 	for _, i := range a {
@@ -181,6 +309,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	layoutCopy := layout.DeepCopy()
+
 	var stable bool
 	for !stable {
 		temp := layout.PerformRound()
@@ -191,4 +321,16 @@ func main() {
 	}
 
 	log.Printf("Part 1: %d", layout.numOccupied())
+
+	layout = layoutCopy
+	stable = false
+	for !stable {
+		temp := layout.PerformRound2()
+		if layout.String() == temp.String() {
+			stable = true
+		}
+		layout = temp
+	}
+
+	log.Printf("Part 2: %d", layout.numOccupied())
 }

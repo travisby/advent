@@ -191,3 +191,7 @@ LLL###LLL#
 Again, at this point, people stop shifting around and the seating area reaches equilibrium. Once this occurs, you count 26 occupied seats.
 
 Given the new visibility method and the rule change for occupied seats becoming empty, once equilibrium is reached, how many seats end up occupied?
+
+Your puzzle answer was 1955.
+
+Both parts of this puzzle are complete! They provide two gold stars: **
