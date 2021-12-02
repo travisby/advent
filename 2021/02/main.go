@@ -9,28 +9,33 @@ import (
 
 type instruction struct {
 	horizontal int
-	depth      int
+	aim        int
 }
 
 func forward(i int) instruction {
 	return instruction{horizontal: i}
 }
 func up(i int) instruction {
-	return instruction{depth: -i}
+	return instruction{aim: -i}
 }
 func down(i int) instruction {
-	return instruction{depth: i}
+	return instruction{aim: i}
 }
 
-type position instruction
+type position struct {
+	instruction
+	depth int
+}
 
 func (p *position) apply(i instruction) {
+	p.aim += i.aim
+
 	p.horizontal += i.horizontal
-	p.depth += i.depth
+	p.depth += p.aim * i.horizontal
 }
 
 func newPosition() position {
-	return position(instruction{})
+	return position{}
 }
 
 func strToInstruction(s string) (*instruction, error) {
@@ -92,5 +97,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Part 1: %d", pos.horizontal*pos.depth)
+	log.Printf("Part 2: %d", pos.horizontal*pos.depth)
 }
