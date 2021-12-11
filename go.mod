@@ -1,3 +1,3 @@
 module gitlab.com/travisby/advent
 
-go 1.12
+go 1.13
