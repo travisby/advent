@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -53,6 +54,7 @@ func main() {
 	} else if err := virtualMachine.Run(); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("")
 }
 
 // shamelessly stolen from ScanWords, but with "," instead of " " as the delimiter
