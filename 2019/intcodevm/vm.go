@@ -2,6 +2,7 @@ package intcodevm
 
 import (
 	"errors"
+	"io"
 	"os"
 
 	"gitlab.com/travisby/advent/2019/intcodevm/program"
@@ -13,11 +14,13 @@ var ErrOverflow = errors.New("The memory has overflowed")
 type VM struct {
 	memory   []int // the state of memory in the VM
 	roMemory []int // the state of Load()'d data, ignoring what might happen after a Run().  This is a good copy of Programs
+	in       io.Reader
+	out      io.Writer
 }
 
 // New creates a new Virtual Machine
 func New(memorySize int) *VM {
-	return &VM{make([]int, memorySize), make([]int, memorySize)}
+	return &VM{memory: make([]int, memorySize), roMemory: make([]int, memorySize), in: os.Stdin, out: os.Stdout}
 }
 
 // Load an intcode program into memory
@@ -54,11 +57,21 @@ func (v *VM) SetVerb(verb int) error {
 	return nil
 }
 
+func (v *VM) SetIn(r io.Reader) {
+	v.in = r
+}
+
+func (v *VM) SetOut(w io.Writer) {
+	v.out = w
+}
+
 // Run the loaded program
 func (v *VM) Run() error {
-	p := program.NewScanner(v.memory, os.Stdin, os.Stdout)
+	p := program.NewScanner(v.memory, v.in, v.out)
 	for p.Scan() {
-		p.Instruction().Apply(v.memory)
+		if err := p.Instruction().Apply(v.memory); err != nil {
+			return err
+		}
 
 	}
 	return p.Err()

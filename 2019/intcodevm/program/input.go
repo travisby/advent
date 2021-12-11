@@ -20,11 +20,6 @@ type input struct {
 }
 
 func (i input) Apply(memory []int) error {
-	inputer := i.input
-	if inputer == nil {
-		inputer = io.Reader(os.Stdin)
-	}
-
 	// let's remind the program runner we want input, if we haven't gotten any after some delay
 	inputGiven := make(chan struct{})
 	go func() {
@@ -36,7 +31,7 @@ func (i input) Apply(memory []int) error {
 	}()
 
 	var temp int
-	if _, err := fmt.Fscanf(inputer, "%d\n", &temp); err != nil {
+	if _, err := fmt.Fscan(i.input, &temp); err != nil {
 		return ErrInvalidInput
 	}
 	// we finally got our input, signal that we might not need to ask for input
