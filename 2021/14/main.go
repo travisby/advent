@@ -5,86 +5,109 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime/debug"
 )
 
-type pairInsertionRule struct {
-	element string
-	left    string
-	right   string
+type element byte
+
+type pair struct {
+	left, right element
 }
 
-func (r pairInsertionRule) Match(left string, right string) bool {
-	return r.left == left && r.right == right
-}
+// maps each type of pair to the number of that pair we have
+type polymer map[pair]int
 
-func NewPairInsertionRule(s string) (*pairInsertionRule, error) {
-	var leftright string
-	var r pairInsertionRule
-	if n, err := fmt.Sscanf(s, "%s -> %s", &leftright, &r.element); n != 2 || err != nil {
-		return nil, err
-	} else if len(leftright) != 2 {
-		return nil, fmt.Errorf("Expected left side of rule to be two characters, got %q", leftright)
+func NewPolymer(s string) polymer {
+	p := make(map[pair]int)
+
+	for i := 0; i < len(s)-1; i++ {
+		p[pair{element(s[i]), element(s[i+1])}]++
 	}
 
-	r.left = string(leftright[0])
-	r.right = string(leftright[1])
+	return p
 
-	return &r, nil
 }
 
-type polymer struct {
-	firstElement string
-	next         *polymer
-}
+// we don't want to modify our current polymer
+// because we need to apply these rules "atomically"
+// so we return a brand new one instead
+func (p polymer) Apply(rs []rule) polymer {
+	newP := p.copy()
 
-func NewPolymer(s string) *polymer {
-	var head polymer
-	// the head is going to be empty
-	// just to make the iteration easier here
-	// we'll just remember to return head.next instead of head!
-	p := &head
-	for _, c := range s {
-		p.next = &polymer{firstElement: fmt.Sprintf("%c", c)}
-		p = p.next
-	}
+	for _, r := range rs {
+		if p[r.matcher] == 0 {
+			continue
+		}
 
-	return head.next
-}
-
-func (p *polymer) Insert(e string) {
-	p.next = &polymer{e, p.next}
-}
-
-func (p polymer) String() string {
-	// XXX: This is recursive and is going to allocate lots of strings
-	// we could improve this by not doing that
-	// and doing a string builder like technique
-	if p.next == nil {
-		return p.firstElement
-	}
-	return p.firstElement + p.next.String()
-}
-
-func (p *polymer) ApplyRules(rules []pairInsertionRule) {
-	if p == nil || p.next == nil {
-		return
-	}
-
-	// by defering now we are also "locking in"
-	// p.next
-	// if any further statements change what p.next is
-	// this defer won't care!
-	// and will use the value as it was at this point
-	defer p.next.ApplyRules(rules)
-
-	for _, r := range rules {
-		if r.Match(p.firstElement, p.next.firstElement) {
-			p.Insert(r.element)
-			// XXX: Assumes only one rule can match a particular pair
-			break
+		newP[r.matcher] -= p[r.matcher]
+		for _, pare := range r.newPairs() {
+			newP[pare] += p[r.matcher]
 		}
 	}
+
+	return newP
+}
+
+func (p polymer) copy() polymer {
+	temp := make(map[pair]int, len(p))
+	for k, v := range p {
+		temp[k] = v
+	}
+	return temp
+}
+
+func (p polymer) pairCountsToElementcounts() map[element]int {
+	result := make(map[element]int)
+	for k, v := range p {
+		result[k.left] += v
+		result[k.right] += v
+	}
+
+	// because we are counting pairs, we need to 1/2
+	// every character we've seen
+	for k, _ := range result {
+		// the end-caps (firt and last character)
+		// will likely (definitely?) appear an odd-number of times
+		// and integer division will screw them out of one of their matches!
+		if result[k]%2 != 0 {
+			result[k]++
+		}
+		result[k] /= 2
+	}
+
+	return result
+}
+
+type rule struct {
+	matcher   pair
+	inBetween element
+}
+
+func NewRule(s string) (*rule, error) {
+	var matcher, inBetween string
+	if n, err := fmt.Sscanf(s, "%s -> %s", &matcher, &inBetween); n != 2 || err != nil {
+		return nil, err
+	} else if len(matcher) != 2 && len(inBetween) != 1 {
+		return nil, fmt.Errorf("Invalid rule string: %q", s)
+	}
+
+	return &rule{pair{element(matcher[0]), element(matcher[1])}, element(inBetween[0])}, nil
+}
+
+func (r rule) newPairs() []pair {
+	return []pair{pair{r.matcher.left, r.inBetween}, pair{r.inBetween, r.matcher.right}}
+}
+
+func elementCountsToAnswer(m map[element]int) int {
+	var highest, lowest element
+	for k, v := range m {
+		if v > m[highest] {
+			highest = k
+		}
+		if v < m[lowest] || m[lowest] == 0 {
+			lowest = k
+		}
+	}
+	return m[highest] - m[lowest]
 }
 
 func main() {
@@ -107,85 +130,45 @@ func main() {
 
 	scanner := bufio.NewScanner(f)
 
-	// first we expect the template
 	if !scanner.Scan() {
-		log.Fatal("No polymer template")
+		log.Fatal("Expected polymer template")
 	} else if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		log.Fatal(scanner.Err())
 	}
+
 	polymerTemplate := scanner.Text()
+	polymer := NewPolymer(polymerTemplate)
 
-	// next we expect a newline
 	if !scanner.Scan() {
-		log.Fatal("No polymer template")
+		log.Fatal("Expected more data")
 	} else if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	} else if scanner.Text() != "" {
-		log.Fatal("Unexpected input!  Expected newline, got %q", scanner.Text())
+		log.Fatal(scanner.Err())
+	} else if txt := scanner.Text(); txt != "" {
+		log.Fatalf("Expected a newline before pair insertion rules, got %q", txt)
 	}
 
-	// finally we get many pair insertion rules
-	var pairInsertionRules []pairInsertionRule
+	var rules []rule
 	for scanner.Scan() {
-		r, err := NewPairInsertionRule(scanner.Text())
+		r, err := NewRule(scanner.Text())
 		if err != nil {
 			log.Fatal(err)
 		}
-		pairInsertionRules = append(pairInsertionRules, *r)
+		rules = append(rules, *r)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	polymer := NewPolymer(polymerTemplate)
-
 	i := 0
 	for ; i < 10; i++ {
-		polymer.ApplyRules(pairInsertionRules)
+		polymer = polymer.Apply(rules)
 	}
 
-	elementsToOccurrences := map[string]uint{}
-	for p := polymer; p != nil; p = p.next {
-		elementsToOccurrences[p.firstElement]++
+	log.Printf("Part 1: %d", elementCountsToAnswer(polymer.pairCountsToElementcounts()))
+
+	for ; i < 40; i++ {
+		polymer = polymer.Apply(rules)
 	}
 
-	var leastOccurring, mostOccurring string
-
-	for e, c := range elementsToOccurrences {
-		if c > elementsToOccurrences[mostOccurring] {
-			mostOccurring = e
-		}
-		if c < elementsToOccurrences[leastOccurring] || elementsToOccurrences[leastOccurring] == 0 {
-			leastOccurring = e
-		}
-	}
-
-	log.Printf("Part 1: %d", elementsToOccurrences[mostOccurring]-elementsToOccurrences[leastOccurring])
-
-	/*
-		Stack overflows :cry:
-
-		for ; i < 40; i++ {
-			polymer.ApplyRules(pairInsertionRules)
-		}
-
-		elementsToOccurrences = map[string]uint{}
-		for p := polymer; p != nil; p = p.next {
-			elementsToOccurrences[p.firstElement]++
-		}
-
-		leastOccurring = ""
-		mostOccurring = ""
-
-		for e, c := range elementsToOccurrences {
-			if c > elementsToOccurrences[mostOccurring] {
-				mostOccurring = e
-			}
-			if c < elementsToOccurrences[leastOccurring] || elementsToOccurrences[leastOccurring] == 0 {
-				leastOccurring = e
-			}
-		}
-
-		log.Printf("Part 2: %d", elementsToOccurrences[mostOccurring]-elementsToOccurrences[leastOccurring])
-	*/
+	log.Printf("Part 2: %d", elementCountsToAnswer(polymer.pairCountsToElementcounts()))
 }
