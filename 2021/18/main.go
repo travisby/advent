@@ -29,24 +29,34 @@ func main() {
 	}()
 
 	scanner := bufio.NewScanner(f)
-	var p Pair
+	var ps []Pair
 	for scanner.Scan() {
 		newPair, err := strToPair(scanner.Text())
 		if err != nil {
 			log.Fatal(err)
 		}
-		p = Add(p, *newPair)
-
-		for p.Reducable() {
-			p = p.Reduce()
-		}
+		ps = append(ps, *newPair)
 
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("Part 1: %d", p.Magnitude())
+	var part1Pair Pair
+	for _, p := range ps {
+		part1Pair = Add(part1Pair, p)
+	}
+	log.Printf("Part 1: %d", part1Pair.Magnitude())
+
+	var part2Magnitude int
+	// this is going to be len(input) P 2
+	// which is O(n^2)
+	for _, p := range permutationPairs(ps) {
+		if magnitude := Add(p[0], p[1]).Magnitude(); magnitude > part2Magnitude {
+			part2Magnitude = magnitude
+		}
+	}
+	log.Printf("Part 2: %d", part2Magnitude)
 }
 
 func strToPair(str string) (*Pair, error) {
@@ -269,7 +279,7 @@ func Add(p1, p2 Pair) Pair {
 		return p1
 	}
 
-	return append(
+	p := Pair(append(
 		[]Element{OpenBrace{}},
 		append(
 			p1,
@@ -281,5 +291,26 @@ func Add(p1, p2 Pair) Pair {
 				)...,
 			)...,
 		)...,
-	)
+	))
+
+	for p.Reducable() {
+		p = p.Reduce()
+	}
+	return p
+}
+
+// permutation of pairs for len(ps)P2
+func permutationPairs(ps []Pair) [][2]Pair {
+	result := make([][2]Pair, 0, len(ps)*len(ps)-1)
+
+	for i := 0; i < len(ps); i++ {
+		for j := 0; j < len(ps); j++ {
+			if i == j {
+				continue
+			}
+			result = append(result, [2]Pair{ps[i], ps[j]})
+		}
+	}
+
+	return result
 }
