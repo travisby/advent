@@ -33,6 +33,7 @@ char* STRINGS_OF_NUMBER[10][NUMBER_OF_STRINGS_FOR_A_NUMBER] = {
 	{"9", "nine"},
 };
 
+// an encounter is what and where we found a number
 struct encounter {
 	// our MAX_LINE_LENGTH is below 128, so char is safe here
 	char index;
@@ -48,6 +49,30 @@ int main() {
 	// buf holds (what should be) a whole line from stdin
 	char buf[MAX_LINE_LENGTH];
 
+	/*
+	 * we want to find the first and last number in each line
+	 * convert that into a base10 number (e.g. `1` and `2` is `12`)
+	 * and sum them all
+	 * where "number" is fuzzy -- meaning either `1` or `one`
+	 * as an edge case, `4twoone` needs to turn into `421` -> `41`
+	 * we can't just replace all the strings with their numbers, as some words
+	 * might serve double duty
+	 *
+	 * So our approach here will be to sum the results of:
+	 * for each line
+	 *   create a "first" and "last" encounter variable
+	 *     where we can store the first number we've found (and where we found it, i.e. its index)
+	 *     set first to a very high index, so any real match will take over
+	 *     and set last to a very low index, so any real match will take over
+	 *   for [0..9]
+	 *     look for both the integer and string version of the number (e.g. "0" and "zero") in the line
+	 *     if we find a match check if its  either sooner than first (index wise) or later than last, and if so replace the encounter
+	 *     NEXT, we can't just stop here.. its possible that there's two ocurrences of this number, and `strstr` our substring match function only returns the first occurrence
+	 *       so repeat the above, but starting AFTER $index (use line[$index+1] as the new "line")
+	 *       repeat until there's no more matches
+	 *     we now have two encounters, simply put them together as a string and conver that to an int with atoi
+	 */
+
 	while (fgets(buf, MAX_LINE_LENGTH, stdin) != NULL) {
 		assert (strchr(buf, '\n') != NULL);
 
@@ -55,6 +80,7 @@ int main() {
 		// so we'll always get "real" values for the first encountered numbers
 		struct encounter first = {MAX_LINE_LENGTH, 0};
 		struct encounter last = {0, 0};
+
 
 		// for [0..9]
 		for (int i = 0; i < NUM_NUMBERS; i++) {
