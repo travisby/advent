@@ -51,11 +51,8 @@ int main() {
 			// that gives us possible digit locations: [previous-1, previous, previous+1, current-1, current+1, next-1, next, next+1]
 			// then we need to make sure there are exactly two distinct numbers (so if previous-1, previous, and previous+1 == "123", that shouldn't count as three numbers, but one)
 			
-			// so first, it's a bit gross but we're learning C here so this is the best I know!
-			// let's gather all possible numbers into an array... we have up to 8 possibilities for adjacency
-			char *numberStrings[8];
-			// and we'll want to track where to insert into next
-			int numberOfStringNextIndex = 0;
+			int uniqueNumberOfStringsIndex = 0;
+			char *uniqueNumberStrings[2] = {NULL, NULL};
 
 			// we're going to iterate over each line
 			// it feels a little sad/dirty that we're creating a new array here for this
@@ -65,6 +62,7 @@ int main() {
 				char *line = lines[i];
 
 				// ensure prev, next exist
+				// if not, skip this line
 				if (line == NULL) {
 					continue;
 				}
@@ -80,44 +78,35 @@ int main() {
 				// considering lines are NULL-terminated, this might be safe regardless, but defensive coding and all that...
 				rightIndex = rightIndex <= strlen(line) ? rightIndex : strlen(line);
 
-				for (int j = leftIndex; j <= rightIndex; j++) {
-					if (isdigit(line[j])) {
-						numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(line, j);
+				// so for every adjacent character on this line, see if it's a number
+				// if it is... see if it's unique
+				// and finally, if it's unique, make sure we're not over our limit of two unique numbers
+				for (int j = leftIndex; j <= rightIndex && uniqueNumberOfStringsIndex <= 2; j++) {
+					if (!isdigit(line[j])) {
+						continue;
 					}
-				}
-			}
 
-			// okay, now we have an array of all of the strings of numbers
-			// now we need to dedupe -- it's possible for the string "123\n.*." and 123 would appear in here three separate times
-			// it should only count once
-			int unique = 0;
-			int uniqueNumbers[2] = {0, 0};
+					// for deduping purposes, we look at the number as a string based on its starting position
+					// (e.g. if line[j] was '2' apart of '123', we'd want `num` here to point at the '1'
+					// that way, if the next loop we see the '3' we can have the same `num`,
+					// and know it's not unique and skip double-counting (or triple-counting)
+					char *num = findBeginningOfNumber(line, j);
 
-			// we're going to see if this is a gear by checking if there's exactly two unique numbers
-			// so this code here is to gather EITHER the count of unique numbers, OR to say "it's greater than 2, bomb out"
-			for (int i = 0; i < numberOfStringNextIndex; i++) {
-				if (unique == 0) {
-					// fallthrough, to our base condition
-					// where we'll add to the array and increment unique count
-				} else if (numberStrings[i] == numberStrings[i-1]) {
-					// this isn't unique, so we can skip it
-					continue;
-				} else if (unique > 1) {
-					// we're already larger than uniqueNumbers can be
-					// and we know we're not a gear
-					// so just mark unique as large and quit early
-					unique++;
-					break;
+					if (uniqueNumberOfStringsIndex > 0 && num == uniqueNumberStrings[uniqueNumberOfStringsIndex - 1]) {
+						// we've already seen this number, so skip it
+						continue;
+					}
+
+					uniqueNumberStrings[uniqueNumberOfStringsIndex++] = num;
 				}
-				uniqueNumbers[unique++] = atoi(numberStrings[i]);
 			}
 
 			// it is only a gear if there are exactly two numbers
-			if (unique == 2) {
+			if (uniqueNumberOfStringsIndex == 2) {
 				// we've now proven that after accounting for dupes, there are only two numbers
 				// we got a gear, hurray!
 				// so add the gear ratio (multiple of the two numbers) to our result
-				result += uniqueNumbers[0] * uniqueNumbers[1];
+				result += atoi(uniqueNumberStrings[0]) * atoi(uniqueNumberStrings[1]);
 			}
 
 		}
