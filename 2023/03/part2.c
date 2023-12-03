@@ -57,44 +57,34 @@ int main() {
 			// and we'll want to track where to insert into next
 			int numberOfStringNextIndex = 0;
 
-			// for each row, we want to look at the index to the left of the gear, the right, and the same index as the gear (for prev&next, not necessary for current)
-			int leftIndex = nextGear - current - 1;
-			int middleIndex = nextGear - current;
-			int rightIndex = nextGear - current + 1;
+			// we're going to iterate over each line
+			// it feels a little sad/dirty that we're creating a new array here for this
+			// but hoping that the compiler would just unroll this loop (and allocation)
+			char *lines[3] = {previous, current, next};
+			for (int i = 0; i < 3; i++) {
+				char *line = lines[i];
 
-			// this is also gross... hopefully a refactor could simplify this
-			// but for right now, for each of those 8 possible matches:
-			// see if the row exists, see if the index is valid, and see if the character is a digit
-			// if so, add a string pointer to our array that covers WHERE THE NUMBER BEGINS IN THE STRING
-			// that will allow us to dedupe later to make sure we're only counting distinct numbers
-			if (previous != NULL && leftIndex >= 0 && isdigit(previous[leftIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(previous, leftIndex);
-			}
-			if (previous != NULL && isdigit(previous[middleIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(previous, middleIndex);
-			}
-			if (previous != NULL && rightIndex <= strlen(previous) && isdigit(previous[rightIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(previous, rightIndex);
-			}
+				// ensure prev, next exist
+				if (line == NULL) {
+					continue;
+				}
 
-			if (current != NULL && leftIndex >= 0 && isdigit(current[leftIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(current, leftIndex);
-			}
-			if (current != NULL && isdigit(current[middleIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(current, middleIndex);
-			}
-			if (current != NULL && rightIndex <= strlen(current) && isdigit(current[rightIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(current, rightIndex);
-			}
+				// now we want to look at the line from one character to the left of the gear's index
+				int leftIndex = nextGear - current - 1;
+				// (if it exists, otherwise we'll just start at the gear index.. which we now know is 0)
+				leftIndex = leftIndex >= 0 ? leftIndex : 0;
 
-			if (next != NULL && leftIndex >= 0 && isdigit(next[leftIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(next, leftIndex);
-			}
-			if (next != NULL && isdigit(next[middleIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(next, middleIndex);
-			}
-			if (next != NULL && rightIndex <= strlen(next) && isdigit(next[rightIndex])) {
-				numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(next, rightIndex);
+				// and one character to the right of the gear's index
+				int rightIndex = nextGear - current + 1;
+				// (if it exists, otherwise we'll just use the gear's index, whic we now know is the end of the line)
+				// considering lines are NULL-terminated, this might be safe regardless, but defensive coding and all that...
+				rightIndex = rightIndex <= strlen(line) ? rightIndex : strlen(line);
+
+				for (int j = leftIndex; j <= rightIndex; j++) {
+					if (isdigit(line[j])) {
+						numberStrings[numberOfStringNextIndex++] = findBeginningOfNumber(line, j);
+					}
+				}
 			}
 
 			// okay, now we have an array of all of the strings of numbers
