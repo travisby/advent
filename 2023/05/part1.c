@@ -34,11 +34,14 @@ int main() {
 	 * We keep track of each seed's value in two arrays (current and next)
 	 * for each individual mapping we see if any current[i] exists in the mapping range
 	 * and if so, copy it to next[i]
-	 * we keep track of all of the i's that get copied over.. and for all that we DIDN'T
-	 * we set next[i] = current[i]
 	 *
-	 * then, we swap current and next, and repeat (we need to keep track of both, but we don't care
-	 * which buffer is which... hurray double buffering)
+	 * once we get to the end (the beginning of the _next_ mapping) we reset "current"
+	 * to be what's in next, and are happy to reuse next for the next mapping
+	 *
+	 * we "copy" rather than swapping buffers back & forth because we rely on "current"
+	 * having the latest data in it, so we don't need to trakc which seeds WEREN't mapped
+	 * Because out of all of this.. not every seed is in a mapping, and if not next[i]=current[i]
+	 * so memcpy gives us that for free space, if not free time
 	 *
 	 * at the end, we just find the smallest value in current for our answer
 	 */
@@ -51,8 +54,11 @@ int main() {
 
 	// double buffer for "current, next" seeds
 	uint seeds[2][MAX_SEEDS];
-	int num_seeds = 0;
 
+	uint *current = seeds[0];
+	uint *next = seeds[1];
+
+	int num_seeds = 0;
 	// strtok_r requires a saveptr
 	char *saveptr;
 	for (char *token = strtok_r(buf, " ", &saveptr); token != NULL; token = strtok_r(NULL, " ", &saveptr)) {
@@ -61,20 +67,12 @@ int main() {
 		if (isdigit(token[0])) {
 			// seeds only holds up to MAX_SEEDS seeds... so error if we go above that
 			assert (num_seeds < MAX_SEEDS);
-			seeds[0][num_seeds++] = strtoll(token, NULL, 10);
+			next[num_seeds++] = strtoll(token, NULL, 10);
 		}
 	}
 
-	uint *current = seeds[0];
-	uint *next = seeds[1];
 
-	// we want to store whether we've already "copied" this seed over
-	// XXX: we could probably get away without this extra storage, if after every mapping we copied next to current
-	// and ensured they all started at 0
-	bool seedMapped[MAX_SEEDS];
-	for (int i = 0; i < num_seeds; i++) {
-		seedMapped[i] = false;
-	}
+	memcpy(current, next, sizeof(seeds[0]));
 
 	while (fgets(buf, MAX_LINE_LENGTH, stdin) != NULL) {
 		// assert we have a full line
@@ -84,26 +82,7 @@ int main() {
 			// ignore the newline-only lines
 			continue;
 		} else if (strchr(buf, ':') != NULL) {
-			// this describes the next map
-			
-			// so let's bring everything over that we haven't already
-			for (int i = 0; i < num_seeds; i++) {
-				if (!seedMapped[i]) {
-					next[i] = current[i];
-				}
-			}
-
-			// and get seedMapped ready to be used again
-			for (int i = 0; i < num_seeds; i++) {
-				seedMapped[i] = false;
-			}
-
-			// it's time to swap our two buffers
-			// so we use "current" as the next ID
-			// and "next" to start holding all of our mappings
-			uint *tmp = current;
-			current = next;
-			next = tmp;
+			memcpy(current, next, sizeof(seeds[0]));
 			continue;
 		}
 		// we have another mapping
@@ -116,29 +95,15 @@ int main() {
 			if (current[i] >= source && current[i] < source + length) {
 				// map it!
 				next[i] = current[i] + offset;
-				// and tell us later we mapped it!
-				seedMapped[i] = true;
 			}
 		}
 	}
 
-	// we normally do this at the beginning of the NEXT round
-	// but since that was the last round, we need to do it at the end instead
-	for (int i = 0; i < num_seeds; i++) {
-		if (!seedMapped[i]) {
-			next[i] = current[i];
-		}
-	}
-	uint *tmp = current;
-	current = next;
-	next = tmp;
-
-
-	// cool, now find the smallest number in current
+	// cool, now find the smallest number in next
 	result = -1;
 	for (int i = 0; i < num_seeds; i++) {
-		if (current[i] < result) {
-			result = current[i];
+		if (next[i] < result) {
+			result = next[i];
 		}
 	}
 
