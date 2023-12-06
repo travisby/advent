@@ -4,21 +4,33 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 
 // `expr $(while read line; do echo -n $line | wc -c; done < input_part2 | sort -n | tail -n1) + 2`
 // one +1 to handle the \n
 // another +1 to handle being a NULL terminated string, rather than needing to track size
 #define MAX_LINE_LENGTH 38
 
+#ifdef PART1
 #define MAX_RACES 10
+#define RACE_TYPE int
+#define RACE_FLOAT double
+#else
+#define MAX_RACES 1
+#define RACE_TYPE long long
+#define RACE_FLOAT long double
+#endif
 
 typedef struct {
-	int time;
-	int distance;
+	RACE_TYPE time;
+	RACE_TYPE distance;
 } race;
 
 
 int main() {
+	#if !defined(PART1) && !defined(PART2)
+		#error "You must define either PART1 or PART2"
+	#endif
 
 	// buf holds (what should be) a whole line from stdin
 	char buf[MAX_LINE_LENGTH];
@@ -45,6 +57,7 @@ int main() {
 	assert (fgets(buf, MAX_LINE_LENGTH, stdin) != NULL);
 	// assert we have a full line
 	assert (strchr(buf, '\n') != NULL);
+	#ifdef PART1
 	for (char *token = strtok_r(buf, " ", &saveptr); token != NULL; token = strtok_r(NULL, " ", &saveptr)) {
 		// throw out leads like "Time:" or "Distance:"
 		// if it's not a number, we don't want it!
@@ -54,13 +67,27 @@ int main() {
 
 		races[numRaces++].time = atoi(token);
 	}
+        #elifdef PART2
+	char temp[MAX_LINE_LENGTH];
+	int tempCount  = 0;
+	for (int i = 0; buf[i] != '\0'; i++) {
+		if (isdigit(buf[i])) {
+			temp[tempCount++] = buf[i];
+		}
+
+	}
+	// finish making it a string
+	temp[tempCount++] = '\0';
+	races[numRaces++].time = atoll(temp);
+	#endif
 
 
-	// now, get all of the ditances
+	// now, get all of the distances
 	assert (fgets(buf, MAX_LINE_LENGTH, stdin) != NULL);
 	// assert we have a full line
 	assert (strchr(buf, '\n') != NULL);
 	numRaces = 0; // we need to restart numRaces; this assumes the number of times and distances were the same
+	#ifdef PART1
 	for (char *token = strtok_r(buf, " ", &saveptr); token != NULL; token = strtok_r(NULL, " ", &saveptr)) {
 		// throw out leads like "Time:" or "Distance:"
 		// if it's not a number, we don't want it!
@@ -70,6 +97,18 @@ int main() {
 
 		races[numRaces++].distance = atoi(token);
 	}
+        #elifdef PART2
+	tempCount  = 0;
+	for (int i = 0; buf[i] != '\0'; i++) {
+		if (isdigit(buf[i])) {
+			temp[tempCount++] = buf[i];
+		}
+
+	}
+	// finish making it a string
+	temp[tempCount++] = '\0';
+	races[numRaces++].distance = atoll(temp);
+	#endif
 
 
 	// ensure there's no more input
@@ -77,10 +116,9 @@ int main() {
 	assert (!ferror(stdin));
 	assert (feof(stdin));
 
-
 	// our result ends up being a multiplication rather than an addition
 	// so we'll start at 1
-	int result = 1;
+	RACE_TYPE result = 1;
 	for (int i = 0; i < numRaces; i++) {
 		// these races are a parabola of the form:
 		// distance[total race time, hold time] = -hold^2 + x*hold
@@ -92,11 +130,11 @@ int main() {
 		// (basically, we convert our refcord ddistance = ax^2 + bx + c to the form ax^2 + bx + c = 0, so we start solving the standard "x intercepts of a parabola")
 
 		int a = -1;
-		int b = races[i].time;
-		int c = -1 * races[i].distance;
+		RACE_TYPE b = races[i].time;
+		RACE_TYPE c = -1 * races[i].distance;
 
-		double x0 = (-b + sqrt(b*b - 4*a*c)) / (2*a);
-		double x1 = (-b - sqrt(b*b - 4*a*c)) / (2*a);
+		RACE_FLOAT x0 = (-b + sqrt(b*b - 4*a*c)) / (2*a);
+		RACE_FLOAT x1 = (-b - sqrt(b*b - 4*a*c)) / (2*a);
 
 		// calculating the integers between the two intercepts was tricky
 		// and resulted in "try floor/ceil +/-1 until the numbers look right"
@@ -104,5 +142,9 @@ int main() {
 		result *= ceil(x1) - floor(x0) -1;
 	}
 
+	#ifdef PART1
 	printf("%d\n", result);
+	#elifdef PART2
+	printf("%lld\n", result);
+	#endif
 }
