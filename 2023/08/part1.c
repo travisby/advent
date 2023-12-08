@@ -20,8 +20,8 @@ typedef struct Node {
 } Node;
 
 typedef struct Network {
-	Node nodes[MAX_NODES];
 	int nodeCount;
+	Node nodes[MAX_NODES];
 } Network;
 
 Node *findNode(Network *network, char *name) {
@@ -93,7 +93,7 @@ int main() {
 	assert (fgets(buf, MAX_LINE_LENGTH, stdin) != NULL);
 	assert (strcmp(buf, "\n") == 0);
 
-	Network network;
+	Network network = {0};
 	while (fgets(buf, MAX_LINE_LENGTH, stdin) != NULL) {
 		// assert we have a full line
 		assert (strchr(buf, '\n') != NULL);
@@ -104,14 +104,28 @@ int main() {
 		addNode(&network, n, l, r);
 	}
 
-	// printNetwork(network);
+	printNetwork(network);
 	
-	// Node *current = findNode(&network, "AAA");
+	Node *current = findNode(&network, "AAA");
+	assert (current != NULL);
+
+	int steps = 0;
+	int instructionsLength = strlen(instructions);
+	while (strcmp(current->name, "ZZZ") != 0) {
+		if (instructions[steps % instructionsLength] == 'L') {
+			current = current->left;
+		} else if (instructions[steps % instructionsLength] == 'R') {
+			current = current->right;
+		}
+
+		steps++;
+		assert (current != NULL);
+	}
 
 	// assert that we didn't stop procesing early due to an error
 	assert (!ferror(stdin));
 	assert (feof(stdin));
 
 	int result = 0;
-	printf("%d\n", result);
+	printf("%d\n", steps);
 }
